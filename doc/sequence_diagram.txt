@@ -1,0 +1,46 @@
+title Quick Trader - przebieg licytacji
+
+actor Użytkownik
+participant Serwer
+actor Pozostali użytkownicy
+
+Użytkownik->Serwer:Próba nawiązania połączenia
+Użytkownik<-Serwer:Zakcpetowano
+
+Użytkownik->>Serwer:Nawiąż i utrzymaj połączenie
+activate Serwer
+activate Serwer
+Serwer->>Serwer:Czy aktualnie trwa jakaś licytacja?
+deactivate Serwer
+alt Licytacja rozpoczęta
+Użytkownik<<-Serwer:Prześlij informacje o trwającej licytacji
+
+else Licytacja oczekująca
+Użytkownik<<-Serwer:Poczekaj na rozpoczęcie licytacji
+end
+#==Przebieg licytacji==
+loop Dopóki licytacja trwa
+Użytkownik->>Serwer:Wyślij kontrofertę
+#group Sprawdź warunki
+activate Serwer
+Serwer->>Serwer:Czy licytacja nadal trwa?
+alt Licytacja zakończona
+Użytkownikx#red-Serwer:Zwróć kod błędu
+
+activate Serwer
+deactivate Serwer
+else Licytacja trwa
+Serwer->>Serwer:Czy nowa oferta jest lepsza niż poprzednia?
+alt Brak przebicia
+Użytkownikx#red-Serwer:Zwróć kod błędu
+end
+
+else Przebicie
+Serwer->>Serwer:Zaktualizuj stan licytacji
+Serwer->>Użytkownik:Poinformuj o prowadzeniu
+Serwer->>Pozostali użytkownicy:Poinformuj o zmianie stanu licytacji
+end
+deactivate Serwer
+end
+Użytkownik<<-Serwer:Koniec licytacji 
+Serwer->>Pozostali użytkownicy:Koniec licytacji
