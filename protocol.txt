@@ -1,0 +1,44 @@
+Ze strony klienta:
+logowanie:
+typ: login
+dane: password
+kto: user
+
+dołącz do aukcji:
+typ: join_trade
+dane: trade_id
+kto: user
+
+dodaj swój przedmiot:
+typ: add_item
+dane: name, min_value, trade_time
+kto: user
+
+Podbij cenę:
+typ: set_price
+dane: price, trade_id
+kto: user
+
+
+
+
+Ze strony serwera:
+Autoryzacja logowania:
+typ: login
+dane: true/false
+kto: user
+
+Autoryzacja dołączenia do aukcji:
+typ: accept_join
+dane: true/false
+kto: user
+
+Akceptacja nowego przedmiotu:
+typ: accept_item
+dane: true/false
+kto: user
+
+Informacja zwrotna przebicia ceny:
+typ: set_price
+dane: too_low/trade_ended/accept
+kto: user
