@@ -1,44 +1,52 @@
 Ze strony klienta:
 logowanie:
-typ: login
-dane: password
-kto: user
+type: login
+data: password
+who: user
+
+pobierz listę dostępnych aukcji:
+type: ask
+data: dload_trades
+who: user
 
 dołącz do aukcji:
-typ: join_trade
-dane: trade_id
-kto: user
+type: join_trade
+data: trade_id
+who: user
 
 dodaj swój przedmiot:
-typ: add_item
-dane: name, min_value, trade_time
-kto: user
+type: add_item
+data: name, min_value, trade_time
+who: user
 
 Podbij cenę:
-typ: set_price
-dane: price, trade_id
-kto: user
-
-
+type: set_price
+data: price, trade_id
+who: user
 
 
 Ze strony serwera:
 Autoryzacja logowania:
-typ: login
-dane: true/false
-kto: user
+type: login
+data: true/false
+who: user
+
+Wyślij listę dostępnych aukcji:
+type: trade_list
+data: trade_list
+who: user
 
 Autoryzacja dołączenia do aukcji:
-typ: accept_join
-dane: true/false
-kto: user
+type: accept_join
+data: true/false
+who: user
 
 Akceptacja nowego przedmiotu:
-typ: accept_item
-dane: true/false
-kto: user
+type: accept_item
+data: true/false
+who: user
 
 Informacja zwrotna przebicia ceny:
-typ: set_price
-dane: too_low/trade_ended/accept
-kto: user
+type: set_price
+data: too_low/trade_ended/accept
+who: user
