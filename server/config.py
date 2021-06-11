@@ -26,11 +26,11 @@ class Config:
         try:
             config_file = open(path, 'r')
         except IOError:
-            print("Unable to open file {}".format(path))
-            sys.exit(1)
-
-        self._parse_file(config_file)
-        config_file.close()
+            print("Unable to open file '{}'".format(path))
+            print("Using default config.")
+        else:
+            self._parse_file(config_file)
+            config_file.close()
 
         global GLOBAL_CONFIG
         GLOBAL_CONFIG = self

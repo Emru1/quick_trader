@@ -5,7 +5,7 @@ import select
 
 
 class Server:
-    def __init__(self):
+    def __init__(self, inqueue, outqueue):
         from config import GLOBAL_CONFIG
         print('Opening server socket on {}'.format(GLOBAL_CONFIG.ip + ':' +
                                                    GLOBAL_CONFIG.port))
@@ -23,24 +23,29 @@ class Server:
                                          GLOBAL_CONFIG.tls_key)
             self.ssocket = self.context.wrap_socket(self.serversocket,
                                                     server_side=True)
-        except:
+        except ssl.SSLError:
             print('Error with creating TLS context')
+            sys.exit(1)
+        except IOError:
+            print('Error with TLS IO')
             sys.exit(1)
 
         self.poll = select.poll()
         self.poll.register(self.ssocket, select.POLLIN)
+
+        self.inqueue = inqueue
+        self.outqueue = outqueue
 
         self.clients = {}
 
     def handle_network(self):
         for fd, event in self.poll.poll():
             if event & (select.POLLHUP | select.POLLERR | select.POLLNVAL):
-                poll.uregister(fd)
+                self.poll.uregister(fd)
                 del self.clients[fd]
 
             elif fd == self.ssocket.fileno():
                 client_sock, addr = self.ssocket.accept()
-                print(type(client_sock))
                 client = Client(client_sock, addr)
                 fd = client_sock.fileno()
                 self.clients[fd] = client
@@ -49,10 +54,15 @@ class Server:
 
             elif event & select.POLLIN:
                 client = self.clients[fd]
-                client.receive_data()
+                data = client.receive_data()
+                self.inqueue.put({'data': data, 'fd': fd})
 
     def __del__(self):
-        pass
+        self.ssocket.close()
+        self.serversocket.close()
+        for fd in self.clients:
+            self.poll.unregister(fd)
+        del self.clients
 
 
 class Client:
@@ -60,31 +70,57 @@ class Client:
         self.sock = sock
         self.address = address
         self.sock.setblocking(False)
+        self._zero_all()
+
+    def _zero_all(self):
+        self.data = b''
+        self.size_header = b''
+        self.size_received = False
+        self.size = 0
+        self.received = 0
+        self.ready = False
 
     def __del__(self):
         self.sock.close()
 
     def receive_data(self):
-        data = b''
-        while b'x' not in data:
-            data += self.sock.recv(1)
-            if not data:
-                return b''
         try:
-            data = data[:-1]
-            print(data)
-            data_len = int(data)
-        except ValueError:
-            print('Connection from {} sent wrong packet size: {}'.format(
-                self.address, data))
-            return {'type': 'error', 'message': 'Wrong packet size header'}
+            if not self.size_received:
+                while True:
+                    data = self.sock.recv(1)
+                    if not data:
+                        return
+                    if b'x' in data:
+                        self.size_received = True
+                        break
+                    sdata = data.decode('utf-8')
+                    if sdata not in '0123456789':
+                        self._zero_all()
+                        return
+                    self.size_header += data
+                if self.size_received:
+                    try:
+                        self.size = int(self.size_header)
+                    except ValueError:
+                        self._zero_all()
+                        return
 
-        data = b''
-        received = 0
-        while received < data_len:
-            print(data)
-            data += self.sock.recv(data_len - received)
-            received += len(data)
+            if self.size_received:
+                while True:
+                    data = self.sock.recv(self.size - self.received)
+                    data_len = len(data)
+                    if not data:
+                        break
+                    self.data += data
+                    self.received += data_len
+                    if self.received == self.size:
+                        self.ready = True
+                        break
 
-        print(data)
-        return data
+            if self.ready:
+                ret = bytes(self.data)
+                self._zero_all()
+                return ret
+        except ssl.SSLWantReadError:
+            print('Receive error from {}'.format(self.address))
+            self._zero_all()
