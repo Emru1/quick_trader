@@ -18,19 +18,24 @@ class App:
         # from config import GLOBAL_CONFIG
         self.inqueue = inqueue
         self.outqueue = outqueue
+
+        self.routes = [
+            'auth',
+        ]
+
         pass
+
+    def send(self, fd, data):
+        self.outqueue.put({'fd': fd, 'data': data})
 
     def receive(self):
         while not self.inqueue.empty():
             data = self.inqueue.get()
             data_dict = string_to_json(data['data'])
             if not data_dict:
-                self.outqueue.put({
-                    'fd': data['fd'],
-                    'data': {
-                        'type': 'error',
-                        'error': errors.ERROR_JSON_PARSE,
-                    }
+                self.send(data['fd'], {
+                    'type': 'error',
+                    'error': errors.ERROR_JSON_PARSE,
                 })
                 continue
             self.route(data_dict)
@@ -38,11 +43,16 @@ class App:
     def route(self, data):
         xdata = data['data']
         if 'type' not in xdata:
-            self.outqueue.put({
-                'fd': data['fd'],
-                'data': {
-                    'type': 'error',
-                    'error': errors.ERROR_JSON_NO_TYPE,
-                }
+            self.send(data['fd'], {
+                'type': 'error',
+                'error': errors.ERROR_JSON_NO_TYPE
+            })
+            return
+
+        route = data['type']
+        if route not in self.routes:
+            self.send(data['fd'], {
+                'type': 'error',
+                'error': errors.ERROR_TYPE_NON_EXIST
             })
             return

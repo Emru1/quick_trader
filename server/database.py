@@ -21,7 +21,7 @@ class Auth(BaseModel):
                                   primary_key=True)
     password_sha512 = peewee.CharField(max_length=128)
     login_token = peewee.CharField(max_length=128, default='')
-    login_date = peewee.DateTimeField(null=True)
+    login_date = peewee.IntegerField(null=True)
 
 
 class Auction(BaseModel):
