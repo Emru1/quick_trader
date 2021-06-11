@@ -1,6 +1,6 @@
 import peewee
 
-database = None
+database = peewee.SqliteDatabase(None)
 
 
 class BaseModel(peewee.Model):
@@ -39,7 +39,7 @@ class DatabaseHandler:
     def __init__(self):
         from config import GLOBAL_CONFIG
         global database
-        database = peewee.SqliteDatabase(GLOBAL_CONFIG.dbpath)
+        database.init(GLOBAL_CONFIG.dbpath)
         self.database = database
         self.database.connect()
         self.database.create_tables([User, Auth, Auction])

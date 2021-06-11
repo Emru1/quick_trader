@@ -1,6 +1,6 @@
 import sys
 
-SETTING_KEYS = ['ip', 'port', 'dbpath']
+SETTING_KEYS = ['ip', 'port', 'dbpath', 'tls_cert', 'tls_key']
 
 GLOBAL_CONFIG = None
 
@@ -19,6 +19,8 @@ class Config:
         self.port = '55555'
         self.ip = '0.0.0.0'
         self.dbpath = './db.sqlite3'
+        self.tls_cert = './tls.cert'
+        self.tls_key = './tls.key'
         # Więcej ustawień
 
         try:
@@ -39,8 +41,8 @@ class Config:
 
         :param config_file: Ścieżka do pliku
         """
-        for lx in config_file:
-            line = lx.rstrip()
+        for linex in config_file:
+            line = linex.rstrip()
             key = line.split(' ')[0]
             value = line.split(' ')[1]
 
