@@ -10,6 +10,7 @@ def main():
 
     inqueue = queue.Queue()
     outqueue = queue.Queue()
+
     config = Config()
     config.print_config()
     database = DatabaseHandler()
