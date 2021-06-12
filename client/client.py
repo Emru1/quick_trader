@@ -2,6 +2,8 @@ import socket
 import json
 import time
 
+global user, password, s
+
 def dload():
     size = b''
     msg = b''
@@ -14,12 +16,20 @@ def dload():
         return "error"
     return msg.decode('utf-8')[:-4]
 
-
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-try:
+def dload_list():
     temp_bool = False
-    s.connect(("localhost", 54321))
+    while not temp_bool:
+        jtemp = json.loads('{"type":"ask", "data":"dload_trades", "who":user}')
+        Message = jtemp.size() + '\0' + jtemp
+        s.sendall(Message.encode('utf-8'))
+        Message = dload()
+        if Message == "error":
+            print("Something's wrong with downloading list! Trying again")
+            time.sleep(5)
+            continue
+        print(Message["data"])
+
+def log_in():
     while not temp_bool:
         user = input("Login:")
         password = input("Password:")
@@ -34,18 +44,7 @@ try:
             if (Message["data"]):
                 login_istrue = True
 
-    temp_bool = False
-    while not temp_bool:
-        jtemp = json.loads('{"type":"ask", "data":"dload_trades", "who":user}')
-        Message = jtemp.size() + '\0' + jtemp
-        s.sendall(Message.encode('utf-8'))
-        Message = dload()
-        if Message == "error":
-            print("Something's wrong with downloading list! Trying again")
-            time.sleep(5)
-            continue
-        print(Message["data"])
-
+def join_trade():
     temp_bool = False
     while not temp_bool:
         trade_id = input("Select trade ID:")
@@ -58,8 +57,23 @@ try:
             continue
         temp_bool = True
 
+def trading():
+    jtemp = json.loads('{"type":"join_trade", "data":"trade_id", "who":user}')
+    Message = jtemp.size() + '\0' + jtemp
+    s.sendall(Message.encode('utf-8'))
+    Message = dload()
+    
+    #CDN
 
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+try:
+    temp_bool = False
+    s.connect(("localhost", 55555))
+    log_in()
+    dload_list()
+    join_trade()
+    trading()
 
 
 except socket.error:
