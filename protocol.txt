@@ -16,8 +16,6 @@ password: password
 
 pobierz listę dostępnych aukcji:
 type: "list"
-data: dload_trades
-who: user
 
 Podbij cenę:
 type: "set_price"
