@@ -1,52 +1,38 @@
+STRUKTURA WIADOMOŚCI:
+<size_of_json> + 'x' + JSON
+
+Do json dołączone są krotki:
+token - losowy numer potwierdzający autoryzację - zawsze po udanym logowaniu
+error - w razie problemów dołączony kod błędu
+
+
+Struktura JSON:
+
 Ze strony klienta:
 logowanie:
-type: login
-data: password
-who: user
+type: "auth"
+username: username
+password: password
 
 pobierz listę dostępnych aukcji:
-type: ask
+type: "list"
 data: dload_trades
 who: user
 
-dołącz do aukcji:
-type: join_trade
-data: trade_id
-who: user
-
-dodaj swój przedmiot:
-type: add_item
-data: name, min_value, trade_time
-who: user
-
 Podbij cenę:
-type: set_price
-data: price, trade_id
-who: user
+type: "set_price"
+price: price
 
 
 Ze strony serwera:
 Autoryzacja logowania:
-type: login
-data: true/false
-who: user
+type: "auth"
+token: token (nie istnieje, jeśli logowanie nieudane)
 
 Wyślij listę dostępnych aukcji:
-type: trade_list
-data: trade_list
-who: user
-
-Autoryzacja dołączenia do aukcji:
-type: accept_join
-data: true/false
-who: user
-
-Akceptacja nowego przedmiotu:
-type: accept_item
-data: true/false
-who: user
+type: "list"
+list: [{lista}]
 
 Informacja zwrotna przebicia ceny:
-type: set_price
-data: too_low/trade_ended/accept
-who: user
+type: "set_price"
+answer: "too_low"/"trade_ended"/"accept"
