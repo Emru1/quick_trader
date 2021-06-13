@@ -2,6 +2,7 @@ import sys
 import ssl
 import socket
 import select
+import time
 
 
 class Server:
@@ -55,7 +56,22 @@ class Server:
             elif event & select.POLLIN:
                 client = self.clients[fd]
                 data = client.receive_data()
-                self.inqueue.put({'data': data, 'fd': fd})
+                if data:
+                    self.inqueue.put({'data': data, 'fd': fd})
+
+        while not self.outqueue.empty():
+            pkg = self.outqueue.get()
+            data = pkg['data']
+            fd = pkg['fd']
+            if fd not in self.clients:
+                continue
+            client = self.clients[fd]
+            client.send(data)
+
+    def run(self):
+        while True:
+            self.handle_network()
+            time.sleep(0.01)
 
     def __del__(self):
         self.ssocket.close()
@@ -82,6 +98,12 @@ class Client:
 
     def __del__(self):
         self.sock.close()
+
+    def send(self, data):
+        length = str(len(data)).encode('utf-8')
+        data = str(data).encode('utf-8')
+        to_send = length + b'x' + data
+        self.sock.sendall(to_send)
 
     def receive_data(self):
         try:
@@ -120,6 +142,7 @@ class Client:
             if self.ready:
                 ret = bytes(self.data)
                 self._zero_all()
+                print('Received data packet from {}'.format(self.address))
                 return ret
         except ssl.SSLWantReadError:
             print('Receive error from {}'.format(self.address))

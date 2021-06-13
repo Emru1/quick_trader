@@ -1,7 +1,11 @@
 from config import Config
 from database import DatabaseHandler
 from network import Server
+from router import Router
+from app import App
+
 import queue
+import threading
 
 
 def main():
@@ -15,9 +19,14 @@ def main():
     config.print_config()
     database = DatabaseHandler()
     server = Server(inqueue, outqueue)
+    routes = Router()
+    app = App(inqueue, outqueue, routes)
 
-    while True:
-        server.handle_network()
+    network_thread = threading.Thread(target=server.run)
+    app_thread = threading.Thread(target=app.run)
+    #    app_thread
+    network_thread.start()
+    app_thread.start()
 
 
 if __name__ == '__main__':
