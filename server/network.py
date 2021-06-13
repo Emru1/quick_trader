@@ -3,10 +3,25 @@ import ssl
 import socket
 import select
 import time
+import queue
 
 
 class Server:
-    def __init__(self, inqueue, outqueue):
+    """
+    Obiekt serwera, obsługuje on zdarzeniowo podpiętych klientów
+    oraz zarządza TLSem
+    """
+    def __init__(self, inqueue: queue.Queue, outqueue: queue.Queue):
+        """
+        Metoda ta inicjalizuje gniazdo serwera, a także kontekst TLS
+        Przyporządkówuje także kolejki wejścia i wyjścia
+
+        :param: inqueue(queue.Queue) - kolejka wejściowa, są to pakiety
+        przychodzące od użytkowników
+        :param: outqueue(queue.Queue) - kolejka wyjściowa, są to pakiety
+        danych które zostaną wysłane do użytkowników
+        """
+
         from config import GLOBAL_CONFIG
         print('Opening server socket on {}'.format(GLOBAL_CONFIG.ip + ':' +
                                                    GLOBAL_CONFIG.port))
@@ -40,6 +55,10 @@ class Server:
         self.clients = {}
 
     def handle_network(self):
+        """
+        Obsługa sieci, najpierw odbiera wszystkie dane i wrzuca je do outqueue
+        po czym wysyła dane z inqueue
+        """
         for fd, event in self.poll.poll():
             if event & (select.POLLHUP | select.POLLERR | select.POLLNVAL):
                 self.poll.uregister(fd)
@@ -69,6 +88,9 @@ class Server:
             client.send(data)
 
     def run(self):
+        """
+        Nieskończona pętla części sieciowej
+        """
         while True:
             self.handle_network()
             time.sleep(0.01)
@@ -82,13 +104,29 @@ class Server:
 
 
 class Client:
-    def __init__(self, sock, address):
+    """
+    Klasa ta reprezentuje klienta podłączonego do serwera
+    Obsługuje ona wymianę danych
+    """
+    def __init__(self, sock: ssl.SSLSocket, address: (str, int)):
+        """
+        Inicjalizacja, przyjmuje gniazdo TLSowe oraz adres klienta
+
+        :param: sock(ssl.SSLSocket) - gniazdo klienta
+        :param: address((str,int)) - krotka z adresem klienta
+        """
+        print(type(sock))
+        print(type(address))
+        print(address)
         self.sock = sock
         self.address = address
         self.sock.setblocking(False)
         self._zero_all()
 
     def _zero_all(self):
+        """
+        Czyszczenie danych tymczasowych służących do kontroli odbierania danych
+        """
         self.data = b''
         self.size_header = b''
         self.size_received = False
@@ -99,13 +137,22 @@ class Client:
     def __del__(self):
         self.sock.close()
 
-    def send(self, data):
+    def send(self, data: str):
+        """
+        Metoda wysyłająca dane do klienta
+
+        :param: data(str) - JSON wysyłany do klienta
+        """
         length = str(len(data)).encode('utf-8')
         data = str(data).encode('utf-8')
         to_send = length + b'x' + data
         self.sock.sendall(to_send)
 
     def receive_data(self):
+        """
+        Metoda odbierająca dane od klienta, używa flag i buforów by móc
+        swobodnie odbierać dane w wielu turach
+        """
         try:
             if not self.size_received:
                 while True:
