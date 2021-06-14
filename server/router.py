@@ -9,6 +9,7 @@ class Router:
     def __init__(self):
         self.routes = {
             'auth': Authorization().login,
+            'logout': Authorization().logout
         }
 
     def route(self, data):

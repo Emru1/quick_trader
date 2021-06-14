@@ -1,3 +1,4 @@
+from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QMainWindow, QApplication, QStackedWidget
 from PyQt5 import uic
 import sys
@@ -40,6 +41,7 @@ class GUI():
         self.main_scene = QStackedWidget()
         self.login_window = LoginWindow()
         self.main_window = MainWindow()
+        
 
         #podpięcie sygnałów 
         self.login_window.login_button.clicked.connect(self.login)

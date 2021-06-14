@@ -1,6 +1,8 @@
 import hashlib
 import time
 
+from peewee import DoesNotExist
+
 import errors
 from database import User, Auth
 
@@ -9,6 +11,7 @@ class Authorization:
     '''
     Klasa służąca do logowania
     '''
+
     def __init__(self):
         # from config import GLOBAL_CONFIG
         pass
@@ -21,9 +24,10 @@ class Authorization:
         password = data['password']
         try:
             user = User.get(User.name == username)
+            print(user.id)
         except User.DoesNotExist:
             return errors.ERROR_LOGIN_FAILED, {}
-        auth = Auth.get(Auth.user == user)
+        auth = Auth.get(Auth.user_id == user.id)
         try:
             h = hashlib.sha512(password.encode('utf-8')).hexdigest()
         except:
@@ -43,3 +47,21 @@ class Authorization:
             return None, {'token': ret}
         else:
             return errors.ERROR_LOGIN_FAILED, {}
+
+    def logout(self, data):
+        print('Logout reguest')
+        username = data.get('username', None)
+        user_token = data.get('token', None)
+
+        if username and user_token:
+            try:
+                user = User.get(User.name == username)
+                user_auth = Auth.get(
+                    Auth.user_id == user, Auth.login_token == user_token)
+                user_auth.login_token = ''
+                user_auth.save()
+                print(user_auth.login_token)
+            except (User.DoesNotExist, Auth.DoesNotExist):
+                return errors.ERROR_LOGOUT_FAILED, {}
+
+        return None, {'succesfully': True}

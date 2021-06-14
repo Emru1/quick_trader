@@ -62,7 +62,7 @@ class Server:
         for fd, event in self.poll.poll(10):
             print(fd, event)
             if event & (select.POLLHUP | select.POLLERR | select.POLLNVAL):
-                self.poll.uregister(self.clients[fd].sock)
+                self.poll.unregister(self.clients[fd].sock)
                 del self.clients[fd]
 
             elif fd == self.ssocket.fileno():
@@ -82,6 +82,7 @@ class Server:
         while not self.outqueue.empty():
             pkg = self.outqueue.get()
             data = pkg['data']
+            print('Wiadomosc do wyslania:', data)
             fd = pkg['fd']
             if fd not in self.clients:
                 continue
