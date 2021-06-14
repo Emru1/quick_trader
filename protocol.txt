@@ -21,6 +21,11 @@ Podbij cenę:
 type: "set_price"
 price: price
 
+Wyloguj:
+type: "logout"
+username: username
+
+
 
 Ze strony serwera:
 Autoryzacja logowania:

@@ -1,77 +1,70 @@
 import socket
 import json
 import time
-import sys
+import ssl
+from qtrader_message import QTraderMessage
 
-global user, password, s, token, price
+class Client:
 
-def check_token(message):
-    if message["token"] != token:
-        print("Błąd uwierzytelnienia! Połączenie nie jest bezpieczne, skontaktuj się z administracją")
-        sys.exit(0)
+    def __init__(self):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            context = ssl.create_default_context(
+                ssl.Purpose.CLIENT_AUTH, cafile='tls.cert')
+            # context.load_cert_chain(certfile='tls.cert', keyfile='tls.key')
+            s = socket.create_connection(("localhost", 5555))
+            ssl_socket = ssl.wrap_socket(s)
+        except socket.error:
+            print("Socket error")
 
-def dload():
-    size = b''
-    msg = b''
-    while not b'x' in size:
-        response = s.recv(1)
-        size += response
-    size = size[:-1]
-    msg = s.recv(size)
-    if (msg.size != size):
-        return "error"
-    msg = msg.decode('utf-8')
-    if msg["error"]:
-        print(msg["error"])
-    return msg
+        self.ssl_socket.close()
 
-def dload_list():
-    jtemp = json.loads('{"type":"list"}')
-    message = jtemp.size() + 'x' + jtemp
-    s.sendall(message.encode('utf-8'))
-    message = dload()
-    if message == "error":
-        print("Something's wrong with downloading list! Trying again")
-        time.sleep(5)
-        dload_list()
-    else:
-        print(message["list"])
+    def check_token(self):
+        if self.message["token"] != self.token:
+            print("Błąd uwierzytelnienia! Połączenie nie jest bezpieczne, skontaktuj się z administracją")
+            return False
+        else: return True
 
-def log_in():
-    user = input("Login:")
-    password = input("Password:")
-    jtemp = json.loads('{"type":"auth", "username":user, "password":password}')
-    message = jtemp.size() + 'x' + jtemp
-    s.sendall(message.encode('utf-8'))
-    message = dload()
-    if message == "error" or message["error"]:
-        print("Connection lost! Try again")
-        if message["error"]:
-            print (message["error"])
-        log_in()
-    elif message["type"] == "login":
-        token = message["token"]
+    def dload_list(self):
+        QTraderMessage("list", {"token":self.token})
+        self.ssl_socket.sendall(QTraderMessage.format_to_send())
+        self.message = QTraderMessage.receive_message(self.ssl_socket)
+        self.check_token()
+        if self.message["error"]:
+            print("Something's wrong with downloading list! Trying again")
+            time.sleep(5)
+            self.dload_list()
+        else:
+            print(self.message["list"])
 
-def bet():
-    jtemp = json.loads('{"type":"set_price", "price":price}')
-    Message = jtemp.size() + 'x' + jtemp
-    s.sendall(Message.encode('utf-8'))
+    def log_in(self, username, password):
+        self.username = username
+        QTraderMessage("auth", {"username":username, "password":password})
+        self.ssl_socket.sendall(QTraderMessage.format_to_send())
+        self.message = QTraderMessage.receive_message(self.ssl_socket)
+        if self.message["error"]:
+            print("Connection lost! Try again")
+            print(self.message["error"])
+            self.log_in()
+        elif self.message["type"] == "login":
+            self.token = self.message["token"]
 
-def trading():
-    #musisz tutaj dodać wątek nasłuchiwania który aktualizuje zmienną "price" i odbiera informacje od serwera
-    #użyj funkcji bet do wysłania nowej ceny
+    def log_out(self):
+        QTraderMessage("logout", {"username":self.username, "token":self.token})
+        self.ssl_socket.sendall(QTraderMessage.format_to_send())
+        self.message = QTraderMessage.receive_message(self.ssl_socket)
+        return self.check_token()
+
+    def bet(self, new_price):
+        QTraderMessage("bet", {"price":new_price, "token":self.token})
+        self.ssl_socket.sendall(QTraderMessage.format_to_send())
 
 
-    #CDN
+    def trading(self):
+        #musisz tutaj dodać wątek nasłuchiwania który aktualizuje zmienną "price" i odbiera informacje od serwera
+        #użyj funkcji bet do wysłania nowej ceny
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-try:
-    temp_bool = False
-    s.connect(("localhost", 55555))
-    log_in()
-    dload_list()
-    trading()
-except socket.error:
-    print("Socket error")
+        pass
+        #CDN
 
-s.close()
+
