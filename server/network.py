@@ -59,9 +59,10 @@ class Server:
         Obsługa sieci, najpierw odbiera wszystkie dane i wrzuca je do outqueue
         po czym wysyła dane z inqueue
         """
-        for fd, event in self.poll.poll():
+        for fd, event in self.poll.poll(10):
+            print(fd, event)
             if event & (select.POLLHUP | select.POLLERR | select.POLLNVAL):
-                self.poll.uregister(fd)
+                self.poll.uregister(self.clients[fd].sock)
                 del self.clients[fd]
 
             elif fd == self.ssocket.fileno():
@@ -93,7 +94,6 @@ class Server:
         """
         while True:
             self.handle_network()
-            time.sleep(0.01)
 
     def __del__(self):
         self.ssocket.close()
