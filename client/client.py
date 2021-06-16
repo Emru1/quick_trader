@@ -4,6 +4,7 @@ import time
 import ssl
 from qtrader_message import QTraderMessage
 
+
 class Client:
     '''
     Klasa reprezentująca użytkownika (klienta) licytacji.
@@ -12,15 +13,14 @@ class Client:
 
     def __init__(self):
         try:
-            context = ssl.create_default_context(
-                ssl.Purpose.CLIENT_AUTH, cafile='tls.cert')
+            # context = ssl.create_default_context(
+            # ssl.Purpose.CLIENT_AUTH, cafile='tls.cert')
             # context.load_cert_chain(certfile='tls.cert', keyfile='tls.key')
             s = socket.create_connection(("localhost", 5556))
             self.ssl_socket = ssl.wrap_socket(s)
             print(self.ssl_socket.version())
         except socket.error as e:
             print(e)
-            
 
         self.username = None
         self.password = None
@@ -47,6 +47,12 @@ class Client:
             print(self.message["list"])
 
     def login(self, username, password):
+        '''
+        Logowanie użytkownika.
+        :param: username(str) - nazwa użytkownika
+        :param: password(str) - hasło użytkownika
+        :return: (bool, str) - tupla zwracająca czy udało się zalogować z ewentualnym numerem błędum
+        '''
         if not self.token:
             self.username = username
             self.password = password
@@ -59,13 +65,16 @@ class Client:
             if received_message['type'] == 'error':
                 print('Connection lost! Try again')
                 print(received_message['error'])
+                return False, received_message['error']
 
             elif received_message['type'] == 'auth':
                 print('Logged in!')
                 self.token = received_message['token']
                 print(self.token)
+                return True, None
         else:
             print('You are already logged in!')
+            return False, None
 
     def logout(self):
         if self.token:

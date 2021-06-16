@@ -1,9 +1,12 @@
-from PyQt5.QtCore import QThread
-from PyQt5.QtWidgets import QMainWindow, QApplication, QStackedWidget
-from PyQt5 import uic
 import sys
+sys.path.append('\quick_trader\client')
+
+from PyQt5.QtCore import QThread
+from PyQt5.QtWidgets import QMainWindow, QApplication, QStackedWidget, QMessageBox
+from PyQt5 import uic
 import time
 from threading import Thread
+from client import Client
 
 class LoginWindow(QMainWindow):
     '''
@@ -41,7 +44,7 @@ class GUI():
         self.main_scene = QStackedWidget()
         self.login_window = LoginWindow()
         self.main_window = MainWindow()
-        
+        self.client = Client()
 
         #podpięcie sygnałów 
         self.login_window.login_button.clicked.connect(self.login)
@@ -53,7 +56,6 @@ class GUI():
         self.main_scene.addWidget(self.login_window)
         self.main_scene.addWidget(self.main_window)
         
-        self.username = None
         self.logged = False
 
         self.main_scene.setFixedSize(self.login_window.minimumWidth(), self.login_window.minimumHeight())
@@ -64,21 +66,31 @@ class GUI():
         IMPLEMENTACJA NA CHWILĘ. TO SIĘ ZMIENI
         '''
         username = self.login_window.username.text()
+        password = self.login_window.password.text()
 
-        if username:
-            self.main_scene.setCurrentIndex(self.main_scene.currentIndex()+1)
+        if username and password:
+            succes, error = self.client.login(username, password)
+            
+            if not succes:
+                QMessageBox.critical(self.main_scene, "LOGOWANIE",
+                                f"Podano niepoprawne dane: {error}")
+                return 
+            
             self.main_window.username_label.setText(username)
-            self.username = username
             self.logged = True
+            self.main_scene.setCurrentIndex(self.main_scene.currentIndex()+1)
             self.main_scene.setFixedSize(self.main_window.minimumWidth(), self.main_window.minimumHeight())
-
+        
+        else:
+            QMessageBox.warning(self.main_scene, "LOGOWANIE",
+                                "Uzupełnij brakujące dane")
     def logout(self):
         '''
         IMPLEMENTACJA NA CHWILĘ. TO SIĘ ZMIENI
         '''
         if self.logged:
+            self.client.logout()
             self.main_scene.setCurrentIndex(self.main_scene.currentIndex()-1)
-            print(self.main_scene.currentWidget)
             self.main_scene.setFixedSize(self.login_window.minimumWidth(), self.login_window.minimumHeight())
 
 if __name__ == '__main__':
