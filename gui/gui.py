@@ -63,14 +63,14 @@ class GUI():
     
     def login(self):
         '''
-        IMPLEMENTACJA NA CHWILĘ. TO SIĘ ZMIENI
+        LOGOWANIE PODPIETE POD KLIENTA
         '''
         username = self.login_window.username.text()
         password = self.login_window.password.text()
 
         if username and password:
             succes, error = self.client.login(username, password)
-            
+
             if not succes:
                 QMessageBox.critical(self.main_scene, "LOGOWANIE",
                                 f"Podano niepoprawne dane: {error}")
