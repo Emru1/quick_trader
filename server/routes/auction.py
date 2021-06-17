@@ -43,6 +43,7 @@ class AuctionHandler:
                       "End_time": self.end_time}
 
     def end_of_time(self):
-        Auction.update({Auction.ended: True, Auction.buyer: self.buyer, Auction.start_price: self.actual_price})
+        Auction.update({Auction.ended: True, Auction.buyer: self.buyer,
+                        Auction.start_price: self.actual_price})
         return None, {"Actual_price": self.actual_price,
                       "Buyer": self.buyer}
