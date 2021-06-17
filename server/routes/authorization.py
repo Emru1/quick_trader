@@ -11,7 +11,6 @@ class Authorization:
     '''
     Klasa służąca do logowania
     '''
-
     def __init__(self):
         # from config import GLOBAL_CONFIG
         pass
@@ -56,8 +55,8 @@ class Authorization:
         if username and user_token:
             try:
                 user = User.get(User.name == username)
-                user_auth = Auth.get(
-                    Auth.user_id == user, Auth.login_token == user_token)
+                user_auth = Auth.get(Auth.user_id == user,
+                                     Auth.login_token == user_token)
                 user_auth.login_token = ''
                 user_auth.save()
                 print(user_auth.login_token)

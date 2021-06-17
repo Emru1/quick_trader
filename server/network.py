@@ -84,8 +84,16 @@ class Server:
             data = pkg['data']
             print('Wiadomosc do wyslania:', data)
             fd = pkg['fd']
+            # broadcast
+            if fd is None:
+                for _, client in self.clients:
+                    client.send(data)
+                continue
+
             if fd not in self.clients:
                 continue
+
+            # unicast
             client = self.clients[fd]
             client.send(data)
 

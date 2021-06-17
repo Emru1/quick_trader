@@ -12,6 +12,7 @@ class User(BaseModel):
     id = peewee.AutoField(primary_key=True)
     name = peewee.CharField()
     is_admin = peewee.BooleanField()
+    last_activity = peewee.IntegerField(null=True)
 
 
 class Auth(BaseModel):
