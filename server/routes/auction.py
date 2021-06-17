@@ -1,4 +1,5 @@
 from server.database import Auction, Auth
+import errors
 
 
 class AuctionHandler:
@@ -31,6 +32,8 @@ class AuctionHandler:
 
     def bet(self, data):
 
+        if not data["token"]:
+            return errors.ERROR_NO_TOKEN, {}
         bet_price = data["price"]
         username = Auth.get(Auth.login_token == data["token"]).name
         if bet_price < self.actual_price:
