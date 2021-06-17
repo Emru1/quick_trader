@@ -50,7 +50,7 @@ class QTraderMessage:
 
         :param: guest_socket(socket) - gniazdo, z którego chcemy odebrać wiadomość
         :param: separator(byte) - opcjonalne
-        :eturn: message_data(dict) - odebrana wiadomość jako słownik
+        :return: message_data(dict) - odebrana wiadomość jako słownik
 
         '''
         recv_data = b''

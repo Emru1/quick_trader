@@ -12,20 +12,11 @@ class Client:
     '''
 
     def __init__(self):
-        try:
-            # context = ssl.create_default_context(
-            # ssl.Purpose.CLIENT_AUTH, cafile='tls.cert')
-            # context.load_cert_chain(certfile='tls.cert', keyfile='tls.key')
-            s = socket.create_connection(("localhost", 5556))
-            self.ssl_socket = ssl.wrap_socket(s)
-            print(self.ssl_socket.version())
-        except socket.error as e:
-            print(e)
-
         self.username = None
         self.password = None
         self.token = None
         self.actual_price = None
+        self.ssl_socket = None
 
     def check_token(self):
         if self.message["token"] != self.token:
@@ -54,6 +45,17 @@ class Client:
         :param: password(str) - hasło użytkownika
         :return: (bool, str) - tupla zwracająca czy udało się zalogować z ewentualnym numerem błędum
         '''
+        print(username, password)
+        try:
+            # context = ssl.create_default_context(
+            # ssl.Purpose.CLIENT_AUTH, cafile='tls.cert')
+            # context.load_cert_chain(certfile='tls.cert', keyfile='tls.key')
+            s = socket.create_connection(("localhost", 5556))
+            self.ssl_socket = ssl.wrap_socket(s)
+            print(self.ssl_socket.version())
+        except socket.error as e:
+            print(e)
+
         if not self.token:
             self.username = username
             self.password = password
@@ -86,6 +88,7 @@ class Client:
 
             print('Logout succesfully!')
 
+            self.ssl_socket.close()
             self.token = None
             self.username = None
             self.password = None
@@ -99,12 +102,19 @@ class Client:
         QTraderMessage("bet", {"price": bet_temp, "token": self.token})
         self.ssl_socket.sendall(QTraderMessage.format_to_send())
 
-    def trading(self):
-        # musisz tutaj dodać wątek nasłuchiwania który aktualizuje zmienną "price" i odbiera informacje od serwera
-        # użyj funkcji bet do wysłania nowej ceny
-
-        pass
-        # CDN
+    def listen(self):
+        '''
+        Nasłuchiwanie komunikatów od serwera
+        '''
+        if self.token:
+            while True:
+                print('HALO HALO')
+                try:
+                    received_message = QTraderMessage.receive_message(
+                        self.ssl_socket)
+                    print(received_message)
+                except ConnectionError:
+                    print('Connection problem')
 
 
 if __name__ == "__main__":
