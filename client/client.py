@@ -25,6 +25,7 @@ class Client:
         self.username = None
         self.password = None
         self.token = None
+        self.actual_price = None
 
     def check_token(self):
         if self.message["token"] != self.token:
@@ -93,8 +94,9 @@ class Client:
             print('You are not logged in!')
             return
 
-    def bet(self, new_price):
-        QTraderMessage("bet", {"price": new_price, "token": self.token})
+    def bet(self, how_much_to_add):
+        bet_temp = self.actual_price + how_much_to_add
+        QTraderMessage("bet", {"price": bet_temp, "token": self.token})
         self.ssl_socket.sendall(QTraderMessage.format_to_send())
 
     def trading(self):
