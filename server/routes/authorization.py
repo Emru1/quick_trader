@@ -8,6 +8,9 @@ from database import User, Auth
 
 
 def check_auth(token: str):
+    '''
+    Ja bym sprawdzał jeszcze czy username się zgadza.
+    '''
     print(1)
     if type(token) is dict:
         try:
@@ -37,6 +40,7 @@ class Authorization:
     '''
     Klasa służąca do logowania
     '''
+
     def __init__(self):
         # from config import GLOBAL_CONFIG
         pass

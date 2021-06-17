@@ -1,3 +1,5 @@
+from routes.auction import AuctionHandler
+# from server.database import Auction
 import sys
 import ssl
 import socket
@@ -11,6 +13,7 @@ class Server:
     Obiekt serwera, obsługuje on zdarzeniowo podpiętych klientów
     oraz zarządza TLSem
     """
+
     def __init__(self, inqueue: queue.Queue, outqueue: queue.Queue):
         """
         Metoda ta inicjalizuje gniazdo serwera, a także kontekst TLS
@@ -53,6 +56,8 @@ class Server:
         self.outqueue = outqueue
 
         self.clients = {}
+
+        self.current_auction = None
 
     def handle_network(self):
         """
@@ -97,6 +102,12 @@ class Server:
             client = self.clients[fd]
             client.send(data)
 
+    def handle_auction(self):
+        '''
+        Obsługa licytacji. Jeszcze nie wiem dlaczego tak
+        '''
+        newest_auction = AuctionHandler.get_newest_auction()
+
     def run(self):
         """
         Nieskończona pętla części sieciowej
@@ -117,6 +128,7 @@ class Client:
     Klasa ta reprezentuje klienta podłączonego do serwera
     Obsługuje ona wymianę danych
     """
+
     def __init__(self, sock: ssl.SSLSocket, address: (str, int)):
         """
         Inicjalizacja, przyjmuje gniazdo TLSowe oraz adres klienta

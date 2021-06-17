@@ -84,7 +84,7 @@ class Client:
             logout_message = QTraderMessage(
                 "logout", {"username": self.username, "token": self.token})
             self.ssl_socket.sendall(logout_message.format_to_send())
-            received_message = QTraderMessage.receive_message(self.ssl_socket)
+            # received_message = QTraderMessage.receive_message(self.ssl_socket)
 
             print('Logout succesfully!')
 
@@ -108,11 +108,11 @@ class Client:
         '''
         if self.token:
             while True:
-                print('HALO HALO')
                 try:
                     received_message = QTraderMessage.receive_message(
                         self.ssl_socket)
-                    print(received_message)
+                    if received_message:
+                        yield received_message
                 except ConnectionError:
                     print('Connection problem')
 

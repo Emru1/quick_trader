@@ -1,4 +1,5 @@
 from routes.authorization import Authorization
+from routes.auction import AuctionHandler
 from routes.ping import Ping
 import errors
 
@@ -11,6 +12,7 @@ class Router:
         self.routes = {
             'auth': Authorization().login,
             'logout': Authorization().logout,
+            'info': AuctionHandler().get_auction_status,
             'ping': Ping().ping,
         }
 

@@ -27,6 +27,7 @@ def main():
     #    app_thread
     network_thread.start()
     app_thread.start()
+    server.handle_auction()
 
 
 if __name__ == '__main__':

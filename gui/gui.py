@@ -1,25 +1,32 @@
+
+from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtWidgets import QMainWindow, QApplication, QStackedWidget, QMessageBox
+from PyQt5 import uic
+import time
+from threading import Thread
+import socket
 import sys
 sys.path.append('\quick_trader\client')
-
-import socket
-from threading import Thread
-import time
-from PyQt5 import uic
-from PyQt5.QtWidgets import QMainWindow, QApplication, QStackedWidget, QMessageBox
-from PyQt5.QtCore import QThread, pyqtSignal
+from qtrader_message import QTraderMessage
 from client import Client
 
 
-
 class ClientWorkerThread(QThread):
-    udpate = pyqtSignal(str)
+    udpate = pyqtSignal(tuple)
 
     def __init__(self, client, parent=None):
         super().__init__(parent=parent)
         self.client = client
 
     def run(self):
-        self.client.listen()
+        print('HALO HALO')
+        messages = self.client.listen()
+
+        for message in messages:
+            print(f'WATEK: {message}')
+            if message['type'] == 'info':
+                status = (message['name'], message['start_price'])
+                self.udpate.emit(status)
 
     def stop(self):
         self.terminate()
@@ -70,6 +77,7 @@ class GUI():
         # podpięcie sygnałów
         self.login_window.login_button.clicked.connect(self.login)
         self.main_window.logout_button.clicked.connect(self.logout)
+        self.main_window.increase10_button.clicked.connect(self.test_info)
 
         # główna scena, to QStackedWidget - coś ala zbiór widżetów. Aby się pomiędzy nimi przełączać,
         # najpierw trzeba je dodać.
@@ -103,6 +111,7 @@ class GUI():
                 self.main_window.username_label.setText(username)
                 self.worker = ClientWorkerThread(self.client)
                 self.worker.start()
+                self.worker.udpate.connect(self.update_gui)
                 self.logged = True
 
                 self.main_scene.setCurrentIndex(
@@ -130,7 +139,20 @@ class GUI():
             self.main_scene.setCurrentIndex(self.main_scene.currentIndex()-1)
             self.main_scene.setFixedSize(
                 self.login_window.minimumWidth(), self.login_window.minimumHeight())
+            self.main_window.current_auction_item_label.setText('Przedmiot: ')
+            self.main_window.auction_time_label_4.setText('0')
 
+    def test_info(self):
+        if self.logged:
+            m = QTraderMessage(
+                "info", {"username": self.client.username, "token": self.client.token})
+            self.client.ssl_socket.sendall(m.format_to_send())
+
+    def update_gui(self, val):
+        item, price= val
+        label = self.main_window.current_auction_item_label.text()
+        self.main_window.current_auction_item_label.setText(label+item)
+        self.main_window.auction_time_label_4.setText(str(price))
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

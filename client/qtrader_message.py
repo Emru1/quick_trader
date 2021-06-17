@@ -12,7 +12,7 @@ class QTraderMessage:
         SERWER:
             message = QTraderMessage.receive_message(client)
     '''
-    VALID_TYPES = ['auth', 'bet', 'list', 'logout', 'error']
+    VALID_TYPES = ['auth', 'bet', 'list', 'logout', 'error', 'info']
 
     def __init__(self, message_type, message: dict):
         '''
