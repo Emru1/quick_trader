@@ -21,6 +21,8 @@ class AuctionHandler:
         self.current_auction = Auction.select().\
             where(not Auction.ended).\
             order_by(Auction.start_time.asc())
+        if not self.current_auction:
+            return errors.ERROR_NO_AUCTION, {}
         self.actual_price = self.current_auction.start_price
         self.seller = self.current_auction.seller
         self.end_time = self.current_auction.end_time
