@@ -6,7 +6,6 @@ class AuctionHandler:
     """
     Klasa służąca do obsłygi aukcji po stronie serwera
     """
-
     def __init__(self):
         # from config import GLOBAL_CONFIG
         self.current_auction = None
@@ -35,7 +34,7 @@ class AuctionHandler:
     def bet(self, data):
 
         if not data["token"]:
-            return errors.ERROR_NO_TOKEN, {}
+            return errors.ERROR_AUTH_FAILED, {}
         bet_price = data["price"]
         username = Auth.get(Auth.login_token == data["token"]).name
         if bet_price < self.actual_price:

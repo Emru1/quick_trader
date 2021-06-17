@@ -7,6 +7,32 @@ import errors
 from database import User, Auth
 
 
+def check_auth(token: str):
+    print(1)
+    if type(token) is dict:
+        try:
+            xtoken = token['auth']
+        except KeyError:
+            return None
+    else:
+        xtoken = token
+    print(2)
+
+    if type(xtoken) is not str:
+        return None
+    print(3)
+    try:
+        print(4)
+        auth = Auth.get(Auth.login_token == xtoken)
+        print(5)
+        print("A ", auth.user_id)
+        user = User.get(User.id == auth.user_id)
+        print(6)
+    except DoesNotExist:
+        return None
+    return user
+
+
 class Authorization:
     '''
     Klasa służąca do logowania
