@@ -16,7 +16,6 @@ class App:
     """
     Klasa będąca reprezentacją całej aplikacji, czy raczej jej funkcjonalności
     """
-
     def __init__(self, inqueue, outqueue, routes):
         # from config import GLOBAL_CONFIG
         self.inqueue = inqueue
@@ -59,10 +58,10 @@ class App:
         '''
         Obsługa licytacji. Jeszcze nie wiem dlaczego tak
         '''
-    
+
         newest_auction = AuctionHandler.get_newest_auction()
         current_time = int(time.time())
-        
+
         if current_time > AuctionHandler.previous_time:
             changed = True
             AuctionHandler.previous_time = current_time
@@ -71,7 +70,7 @@ class App:
 
         if newest_auction:
             start_time = newest_auction['start_time']
-            
+
             # AuctionHandler.countdown_to_auction(start_time)
             if changed:
                 start_time = int(start_time.timestamp())
@@ -85,11 +84,23 @@ class App:
 
                 AuctionHandler.current_price = 5000
                 AuctionHandler.current_leader = 2
-                
+
                 if not AuctionHandler.current_end_time:
                     AuctionHandler.end_of_time()
 
     def run(self):
+        xtime = 1
+        prevtime = 0
         while True:
             self.receive()
             self.handle_auction()
+
+            xtime = int(time.time())
+            if xtime > prevtime:
+                prevtime = xtime
+                if not xtime % 4:
+                    print('ping')
+                    self.outqueue.put({
+                        'fd': None,
+                        'data': json.dumps({'ping': 'server'})
+                    })

@@ -15,7 +15,6 @@ class Server:
     Obiekt serwera, obsługuje on zdarzeniowo podpiętych klientów
     oraz zarządza TLSem
     """
-
     def __init__(self, inqueue: queue.Queue, outqueue: queue.Queue):
         """
         Metoda ta inicjalizuje gniazdo serwera, a także kontekst TLS
@@ -67,9 +66,9 @@ class Server:
         po czym wysyła dane z inqueue
         """
         for fd, event in self.poll.poll(10):
-            print(fd, event)
             if event & (select.POLLHUP | select.POLLERR | select.POLLNVAL):
-                self.poll.unregister(self.clients[fd].sock)
+                print(f'UNREGISTER {fd}')
+                self.poll.unregister(fd)
                 del self.clients[fd]
 
             elif fd == self.ssocket.fileno():
@@ -89,12 +88,11 @@ class Server:
         while not self.outqueue.empty():
             pkg = self.outqueue.get()
             data = pkg['data']
-            print('Wiadomosc do wyslania:', data)
             fd = pkg['fd']
             # broadcast
             if fd is None:
-                for _, client in self.clients:
-                    client.send(data)
+                for cl in self.clients:
+                    self.clients[cl].send(data)
                 continue
 
             if fd not in self.clients:
@@ -124,7 +122,6 @@ class Client:
     Klasa ta reprezentuje klienta podłączonego do serwera
     Obsługuje ona wymianę danych
     """
-
     def __init__(self, sock: ssl.SSLSocket, address: (str, int)):
         """
         Inicjalizacja, przyjmuje gniazdo TLSowe oraz adres klienta
@@ -133,7 +130,6 @@ class Client:
         :param: address((str,int)) - krotka z adresem klienta
         """
         print(type(sock))
-        print(type(address))
         print(address)
         self.sock = sock
         self.address = address
