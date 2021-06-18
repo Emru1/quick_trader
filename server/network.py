@@ -5,7 +5,9 @@ import ssl
 import socket
 import select
 import time
+import threading
 import queue
+from datetime import date, datetime
 
 
 class Server:
@@ -101,12 +103,6 @@ class Server:
             # unicast
             client = self.clients[fd]
             client.send(data)
-
-    def handle_auction(self):
-        '''
-        Obsługa licytacji. Jeszcze nie wiem dlaczego tak
-        '''
-        newest_auction = AuctionHandler.get_newest_auction()
 
     def run(self):
         """

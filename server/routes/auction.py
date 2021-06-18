@@ -1,6 +1,8 @@
+from datetime import datetime
 from database import Auction, Auth
+import time
 from .authorization import check_auth
-# from peewee import get
+from peewee import DoesNotExist
 import errors
 
 
@@ -11,6 +13,11 @@ class AuctionHandler:
     """
 
     current_auction = None
+    current_auction_started = False
+    current_leader = None  # id
+    current_price = None
+    current_end_time = 60
+    previous_time = 0
 
     def load_auction(self):
         self.current_auction = Auction.select().\
@@ -34,9 +41,12 @@ class AuctionHandler:
         :return: Auction or None
         '''
         if not AuctionHandler.current_auction:
-            AuctionHandler.current_auction = Auction.select().\
-                where(Auction.ended == 0).\
-                order_by(Auction.start_time.asc()).dicts().get()
+            try:
+                AuctionHandler.current_auction = Auction.select().\
+                    where(Auction.ended == 0).\
+                    order_by(Auction.start_time.asc()).dicts().get()
+            except DoesNotExist as e:
+                AuctionHandler.current_auction = None
 
         return AuctionHandler.current_auction
 
@@ -58,10 +68,12 @@ class AuctionHandler:
             print('niezalogowany uzyszkodnik')
 
         else:
-            if AuctionHandler.current_auction:
+            if AuctionHandler.current_auction and AuctionHandler.current_auction_started:
                 info = {}
                 info['name'] = AuctionHandler.current_auction['name']
-                info['start_price'] = float(AuctionHandler.current_auction['start_price'])
+                info['current_price'] = float(AuctionHandler.current_price)
+                info['leader'] = AuctionHandler.current_leader
+                info['end_time'] = AuctionHandler.current_end_time
                 return None, info
             else:
                 return errors.ERROR_LOGIN_FAILED, {}
@@ -70,19 +82,47 @@ class AuctionHandler:
 
         if not data["token"]:
             return errors.ERROR_AUTH_FAILED, {}
-        bet_price=data["price"]
-        username=Auth.get(Auth.login_token == data["token"]).name
+        bet_price = data["price"]
+        username = Auth.get(Auth.login_token == data["token"]).name
         if bet_price < self.actual_price:
             return None
-        self.actual_price=bet_price
-        self.buyer=username
+        self.actual_price = bet_price
+        self.buyer = username
         self.end_time += 10
         return None, {"Actual_price": self.actual_price,
                       "Buyer": self.buyer,
                       "End_time": self.end_time}
 
-    def end_of_time(self):
-        Auction.update({Auction.ended: True, Auction.buyer: self.buyer,
-                        Auction.start_price: self.actual_price})
-        return None, {"Actual_price": self.actual_price,
-                      "Buyer": self.buyer}
+    @classmethod
+    def end_of_time(cls):
+        if not AuctionHandler.current_auction:
+            return
+
+        print(f'OBSLUGIWANA: {AuctionHandler.current_auction}')
+        query = Auction.update({Auction.ended: 1, Auction.buyer: AuctionHandler.current_leader,
+                                Auction.start_price: AuctionHandler.current_price}).\
+            where(Auction.id == AuctionHandler.current_auction['id'])
+        query.execute()
+
+        AuctionHandler.current_auction = None
+        AuctionHandler.current_auction_started = False
+        AuctionHandler.current_leader = None  # id
+        AuctionHandler.current_price = None
+        AuctionHandler.current_end_time = 60
+        AuctionHandler.previous_time = 0
+
+        # return None, {"Actual_price": self.actual_price,
+        #               "Buyer": self.buyer}
+
+    @classmethod
+    def countdown_to_auction(cls, start_time):
+        '''
+        LICZY DO ROZPOCZECIA AUKCJI (THREAD)
+        '''
+
+        if AuctionHandler.current_auction:
+            pass
+            # while datetime.now() < start_time:
+            #     time.sleep(1)
+            #     print(f'czeka {datetime.now()} do {start_time}')
+            # AuctionHandler.current_auction_started = True
