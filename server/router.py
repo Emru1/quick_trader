@@ -14,6 +14,7 @@ class Router:
             'logout': Authorization().logout,
             'info': AuctionHandler().get_auction_status,
             'ping': Ping().ping,
+            'bet': AuctionHandler().bet
         }
 
     def route(self, data):

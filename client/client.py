@@ -15,28 +15,12 @@ class Client:
         self.username = None
         self.password = None
         self.token = None
-        self.actual_price = None
         self.ssl_socket = None
 
-    def check_token(self):
-        if self.message["token"] != self.token:
-            print(
-                "Błąd uwierzytelnienia! Połączenie nie jest bezpieczne, skontaktuj się z administracją")
-            return False
-        else:
-            return True
-
-    def dload_list(self):
-        QTraderMessage("list", {"token": self.token})
-        self.ssl_socket.sendall(QTraderMessage.format_to_send())
-        self.message = QTraderMessage.receive_message(self.ssl_socket)
-        self.check_token()
-        if self.message["error"]:
-            print("Something's wrong with downloading list! Trying again")
-            time.sleep(5)
-            self.dload_list()
-        else:
-            print(self.message["list"])
+        self.actual_price = None
+        self.current_leader = None
+        self.count = None
+        self.auction_started = None
 
     def login(self, username, password):
         '''
@@ -98,9 +82,11 @@ class Client:
             return
 
     def bet(self, how_much_to_add):
-        bet_temp = self.actual_price + how_much_to_add
-        QTraderMessage("bet", {"price": bet_temp, "token": self.token})
-        self.ssl_socket.sendall(QTraderMessage.format_to_send())
+        print(f'NOWA:{how_much_to_add}')
+        if self.token and self.actual_price:
+            bet_temp = self.actual_price + how_much_to_add
+            self.ssl_socket.sendall(QTraderMessage(
+                "bet", {"price": bet_temp, "token": self.token, 'username': self.username}).format_to_send())
 
     def listen(self):
         '''
@@ -112,9 +98,22 @@ class Client:
                     received_message = QTraderMessage.receive_message(
                         self.ssl_socket)
                     if received_message:
+                        self.message_handler(received_message)
                         yield received_message
                 except ConnectionError:
                     print('Connection problem')
+
+    def message_handler(self, message):
+        if message['type'] == 'info' and message['started'] is True:
+            self.count = message['end_time'] * 10
+            self.actual_price = message['current_price']
+            self.current_leader = message['leader']
+            self.auction_started = True
+
+        if message['type'] == 'bet':
+            self.count = message['end_time'] * 10
+            self.actual_price = message['current_price']
+            self.current_leader = message['leader']
 
 
 if __name__ == "__main__":

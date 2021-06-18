@@ -10,6 +10,8 @@ from database import User, Auth
 def check_auth(token: str):
     '''
     Ja bym sprawdzał jeszcze czy username się zgadza.
+    user: MArcin tokensadads
+    user: Łukasz tokensadasa
     '''
     print(1)
     if type(token) is dict:

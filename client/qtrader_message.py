@@ -12,7 +12,7 @@ class QTraderMessage:
         SERWER:
             message = QTraderMessage.receive_message(client)
     '''
-    VALID_TYPES = ['auth', 'bet', 'list', 'logout', 'error', 'info']
+    VALID_TYPES = ['auth', 'bet', 'list', 'logout', 'error', 'info', 'ping']
 
     def __init__(self, message_type, message: dict):
         '''
@@ -66,7 +66,7 @@ class QTraderMessage:
 
         message_data = json.loads(guest_socket.recv(message_size))
         message_type = message_data.get('type', None)
-
+        
         if not message_type or message_type not in cls.VALID_TYPES:
             raise Exception('Invalid incoming message')
 

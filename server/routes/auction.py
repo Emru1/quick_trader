@@ -18,6 +18,7 @@ class AuctionHandler:
     current_price = None
     current_end_time = 60
     previous_time = 0
+    info_sended = False
 
     def load_auction(self):
         self.current_auction = Auction.select().\
@@ -45,6 +46,8 @@ class AuctionHandler:
                 AuctionHandler.current_auction = Auction.select().\
                     where(Auction.ended == 0).\
                     order_by(Auction.start_time.asc()).dicts().get()
+                AuctionHandler.current_price = float(
+                    AuctionHandler.current_auction['start_price'])
             except DoesNotExist as e:
                 AuctionHandler.current_auction = None
 
@@ -68,12 +71,16 @@ class AuctionHandler:
             print('niezalogowany uzyszkodnik')
 
         else:
-            if AuctionHandler.current_auction and AuctionHandler.current_auction_started:
+            if AuctionHandler.current_auction:
                 info = {}
+                info['type'] = 'info'
                 info['name'] = AuctionHandler.current_auction['name']
-                info['current_price'] = float(AuctionHandler.current_price)
+                info['current_price'] = AuctionHandler.current_price
                 info['leader'] = AuctionHandler.current_leader
+                info['start_time'] = str(
+                    AuctionHandler.current_auction['start_time'])
                 info['end_time'] = AuctionHandler.current_end_time
+                info['started'] = AuctionHandler.current_auction_started
                 return None, info
             else:
                 return errors.ERROR_LOGIN_FAILED, {}
@@ -115,14 +122,41 @@ class AuctionHandler:
         #               "Buyer": self.buyer}
 
     @classmethod
-    def countdown_to_auction(cls, start_time):
+    def bet(cls, data):
         '''
-        LICZY DO ROZPOCZECIA AUKCJI (THREAD)
+        Obsługa betowania. Zwraca True/False - czy się udało
+        :param: username - nazwa użytkownika
+        :param: new_price - cena zaproponowana przez użytkownika
         '''
+        logged = check_auth(data['token'])
+        auction_conditions = (
+            cls.current_auction and cls.current_auction_started and cls.current_end_time)
+        user_conditions = (logged and cls.current_leader != data['username'])
+        
+        # possible = all(logged, cls.current_auction, cls.current_leader != data['username'],
+        #                cls.current_auction_started, cls.current_end_time)
 
-        if AuctionHandler.current_auction:
-            pass
-            # while datetime.now() < start_time:
-            #     time.sleep(1)
-            #     print(f'czeka {datetime.now()} do {start_time}')
-            # AuctionHandler.current_auction_started = True
+        print('logged:', logged)
+        print('aukcja:', cls.current_auction)
+   
+        print('leader:', cls.current_leader)
+        print('wystartowana:', cls.current_auction_started)
+        print('czas:', cls.current_end_time)
+
+        if auction_conditions and user_conditions:
+            if data['price'] > cls.current_price:
+
+                cls.current_price = data['price']
+                cls.current_leader = data['username']
+                cls.current_end_time += 10
+
+                info = {}
+                info['name'] = cls.current_auction['name']
+                info['type'] = 'bet'
+                info['current_price'] = cls.current_price
+                info['leader'] = cls.current_leader
+                info['end_time'] = AuctionHandler.current_end_time
+                info['started'] = AuctionHandler.current_auction_started
+                return None, info
+
+        return errors.ERROR_LOGIN_FAILED, {}

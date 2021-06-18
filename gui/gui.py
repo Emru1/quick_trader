@@ -1,5 +1,6 @@
 
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtCore import QThread, QTimer, pyqtSignal
+from functools import partial
 from PyQt5.QtWidgets import QMainWindow, QApplication, QStackedWidget, QMessageBox
 from PyQt5 import uic
 import time
@@ -12,6 +13,7 @@ from client import Client
 
 
 class ClientWorkerThread(QThread):
+    auction_started = pyqtSignal(int)
     udpate = pyqtSignal(tuple)
 
     def __init__(self, client, parent=None):
@@ -24,9 +26,12 @@ class ClientWorkerThread(QThread):
 
         for message in messages:
             print(f'WATEK: {message}')
-            if message['type'] == 'info':
-                status = (message['name'], message['start_price'])
+            if message['type'] in ['info', 'bet']:
+                status = (message['name'], message['current_price'], message['leader'])
                 self.udpate.emit(status)
+                if message['started'] is True:
+                    init = int(message['end_time'])
+                    self.auction_started.emit(init)
 
     def stop(self):
         self.terminate()
@@ -77,13 +82,16 @@ class GUI():
         # podpięcie sygnałów
         self.login_window.login_button.clicked.connect(self.login)
         self.main_window.logout_button.clicked.connect(self.logout)
-        self.main_window.increase10_button.clicked.connect(self.test_info)
+        self.main_window.increase10_button.clicked.connect(partial(self.bet, 10))
 
         # główna scena, to QStackedWidget - coś ala zbiór widżetów. Aby się pomiędzy nimi przełączać,
         # najpierw trzeba je dodać.
 
         self.main_scene.addWidget(self.login_window)
         self.main_scene.addWidget(self.main_window)
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.auction_timer)
 
         self.logged = False
         self.worker = None
@@ -112,6 +120,7 @@ class GUI():
                 self.worker = ClientWorkerThread(self.client)
                 self.worker.start()
                 self.worker.udpate.connect(self.update_gui)
+                self.worker.auction_started.connect(self.start_auction)
                 self.logged = True
 
                 self.main_scene.setCurrentIndex(
@@ -142,17 +151,45 @@ class GUI():
             self.main_window.current_auction_item_label.setText('Przedmiot: ')
             self.main_window.auction_time_label_4.setText('0')
 
-    def test_info(self):
+    def bet(self, price):
         if self.logged:
-            m = QTraderMessage(
-                "info", {"username": self.client.username, "token": self.client.token})
-            self.client.ssl_socket.sendall(m.format_to_send())
+            self.client.bet(price)
+            # m = QTraderMessage(
+            #     "info", {"username": self.client.username, "token": self.client.token})
+            # self.client.ssl_socket.sendall(m.format_to_send())
 
     def update_gui(self, val):
-        item, price= val
+        item, price, leader = val
         label = self.main_window.current_auction_item_label.text()
         self.main_window.current_auction_item_label.setText(label+item)
         self.main_window.auction_time_label_4.setText(str(price))
+        self.main_window.auction_time_label_5.setText(leader)
+
+    def auction_timer(self):
+        # checking if flag is true
+        if self.client.auction_started:
+            # incrementing the counter
+            self.client.count -= 1
+
+            # timer is completed
+            if self.client.count == 0:
+
+                # making flag false
+                self.client.auction_started = False
+
+                # setting text to the label
+                self.main_window.auction_time_label_3.setText("0s")
+
+        if self.client.auction_started:
+            # getting text from count
+            text = str(self.client.count / 10) + " s"
+
+            # showing text
+            self.main_window.auction_time_label_3.setText(text)
+
+    def start_auction(self, val):
+        print("AKCJA ROZPOCZELA SIE!")
+        self.timer.start(100)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

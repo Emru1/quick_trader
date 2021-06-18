@@ -43,6 +43,9 @@ class App:
             if error:
                 self.send(fd, {'type': 'error', 'error': error})
             else:
+                if resp['type'] == 'bet':
+                    self.send(None, resp)
+                    return
                 self.send(fd, resp)
 
     def route(self, data):
@@ -77,13 +80,26 @@ class App:
                 print(f'CURRENT: {current_time}. START: {start_time}')
                 if current_time >= start_time:
                     AuctionHandler.current_auction_started = True
+                   
 
             if AuctionHandler.current_auction_started:
+                if not AuctionHandler.info_sended:
+                        info = {}
+                        info['type'] = 'info'
+                        info['name'] = AuctionHandler.current_auction['name']
+                        info['current_price'] = AuctionHandler.current_price
+                        info['leader'] = AuctionHandler.current_leader
+                        info['start_time'] = str(
+                            AuctionHandler.current_auction['start_time'])
+                        info['end_time'] = AuctionHandler.current_end_time
+                        info['started'] = AuctionHandler.current_auction_started
+                        self.send(None, info)
+                        AuctionHandler.info_sended = True
                 if changed:
                     AuctionHandler.current_end_time -= 1
 
-                AuctionHandler.current_price = 5000
-                AuctionHandler.current_leader = 2
+                # AuctionHandler.current_price = 5000
+                # AuctionHandler.current_leader = 2
 
                 if not AuctionHandler.current_end_time:
                     AuctionHandler.end_of_time()
@@ -100,7 +116,5 @@ class App:
                 prevtime = xtime
                 if not xtime % 4:
                     print('ping')
-                    self.outqueue.put({
-                        'fd': None,
-                        'data': json.dumps({'ping': 'server'})
-                    })
+                    self.send(None, {'type': 'ping'})
+                   
