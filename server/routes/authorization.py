@@ -42,7 +42,6 @@ class Authorization:
     '''
     Klasa służąca do logowania
     '''
-
     def __init__(self):
         # from config import GLOBAL_CONFIG
         pass
@@ -59,10 +58,7 @@ class Authorization:
         except User.DoesNotExist:
             return errors.ERROR_LOGIN_FAILED, {}
         auth = Auth.get(Auth.user_id == user.id)
-        try:
-            h = hashlib.sha512(password.encode('utf-8')).hexdigest()
-        except:
-            return errors.ERROR_LOGIN_FAILED, {}
+        h = hashlib.sha512(password.encode('utf-8')).hexdigest()
         if auth.password_sha512 == h:
             now = int(time.time())
             xtime = str(now).encode('utf-8')

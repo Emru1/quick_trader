@@ -17,7 +17,7 @@ def main():
 
     config = Config()
     config.print_config()
-    database = DatabaseHandler()
+    DatabaseHandler()
     server = Server(inqueue, outqueue)
     routes = Router()
     app = App(inqueue, outqueue, routes)

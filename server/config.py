@@ -1,5 +1,3 @@
-import sys
-
 SETTING_KEYS = ['ip', 'port', 'dbpath', 'tls_cert', 'tls_key']
 
 GLOBAL_CONFIG = None

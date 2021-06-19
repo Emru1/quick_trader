@@ -1,13 +1,8 @@
-from routes.auction import AuctionHandler
-# from server.database import Auction
 import sys
 import ssl
 import socket
 import select
-import time
-import threading
 import queue
-from datetime import date, datetime
 
 
 class Server:

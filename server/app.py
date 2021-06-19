@@ -80,21 +80,20 @@ class App:
                 print(f'CURRENT: {current_time}. START: {start_time}')
                 if current_time >= start_time:
                     AuctionHandler.current_auction_started = True
-                   
 
             if AuctionHandler.current_auction_started:
                 if not AuctionHandler.info_sended:
-                        info = {}
-                        info['type'] = 'info'
-                        info['name'] = AuctionHandler.current_auction['name']
-                        info['current_price'] = AuctionHandler.current_price
-                        info['leader'] = AuctionHandler.current_leader
-                        info['start_time'] = str(
-                            AuctionHandler.current_auction['start_time'])
-                        info['end_time'] = AuctionHandler.current_end_time
-                        info['started'] = AuctionHandler.current_auction_started
-                        self.send(None, info)
-                        AuctionHandler.info_sended = True
+                    info = {}
+                    info['type'] = 'info'
+                    info['name'] = AuctionHandler.current_auction['name']
+                    info['current_price'] = AuctionHandler.current_price
+                    info['leader'] = AuctionHandler.current_leader
+                    info['start_time'] = str(
+                        AuctionHandler.current_auction['start_time'])
+                    info['end_time'] = AuctionHandler.current_end_time
+                    info['started'] = AuctionHandler.current_auction_started
+                    self.send(None, info)
+                    AuctionHandler.info_sended = True
                 if changed:
                     AuctionHandler.current_end_time -= 1
 
@@ -117,4 +116,3 @@ class App:
                 if not xtime % 4:
                     print('ping')
                     self.send(None, {'type': 'ping'})
-                   
