@@ -1,21 +1,23 @@
 Pierwsze uruchomienie:
 GUI wymaga PyQT i innych bibliotek, które trzeba doinstalować.
-Aby nie robić syfu, polecam stworzyć wirtualne środowisko i doinstalować, co trzeba.
 
-1. Stwórz wirtualne środowisko
-2. Aktywuj środowisko
-3. pip install -r requirements_freeze
-4. Dodaj katalog z wirtualnym środowiskiem do .gitignore
+Klient:
+1. `python3 -m venv venv_client'
+2. `source venv_client/bin/activate`
+3. `pip install -r requirements_freeze`
 
 Kolejne uruchomienia:
-1. Aktywuj środowisko
-2. Działaj
+1. `source venv_client/bin/activate`
+2. `cd gui`
+3. `python3 gui.py`
 
 Serwer:
 przygotowanie:
-1. Stwórz wirtualne środowisko Pythona 3.9 w katalogu server
-2. Aktywuj je `source venv/bin/activate`
-3. `pip install -r requirements.txt`
-uruchomienie:
-1. Aktywuj środowisko
-2. wykonaj w katalogu serwer `python3.9 main.py`
+1. `cd server`
+2. `python3.9 -m venv venv`
+3. `source venv/bin/activate`
+4. `pip install -r requirements.txt`
+Uruchomienie:
+1. `cd server`
+2. `source venv/bin/activate`
+3. `python3.9 main.py`
