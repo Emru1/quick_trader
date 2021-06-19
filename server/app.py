@@ -83,16 +83,8 @@ class App:
 
             if AuctionHandler.current_auction_started:
                 if not AuctionHandler.info_sended:
-                    info = {}
-                    info['type'] = 'info'
-                    info['name'] = AuctionHandler.current_auction['name']
-                    info['current_price'] = AuctionHandler.current_price
-                    info['leader'] = AuctionHandler.current_leader
-                    info['start_time'] = str(
-                        AuctionHandler.current_auction['start_time'])
-                    info['end_time'] = AuctionHandler.current_end_time
-                    info['started'] = AuctionHandler.current_auction_started
-                    self.send(None, info)
+                    _, msg = AuctionHandler.get_current_auction_info()
+                    self.send(None, msg)
                     AuctionHandler.info_sended = True
                 if changed:
                     AuctionHandler.current_end_time -= 1
@@ -101,6 +93,9 @@ class App:
                 # AuctionHandler.current_leader = 2
 
                 if not AuctionHandler.current_end_time:
+                    _, msg = AuctionHandler.get_current_auction_info()
+                    print(msg)
+                    self.send(None, msg)
                     AuctionHandler.end_of_time()
 
     def run(self):

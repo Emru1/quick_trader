@@ -8,13 +8,18 @@ from threading import Thread
 import socket
 import sys
 sys.path.append('\quick_trader\client')
-from qtrader_message import QTraderMessage
 from client import Client
-
+from qtrader_message import QTraderMessage
 
 class ClientWorkerThread(QThread):
-    auction_started = pyqtSignal(int)
-    udpate = pyqtSignal(tuple)
+    '''
+    Przechwytuje wiadomości od klienta
+    '''
+    auction_info = pyqtSignal()
+    auction_started = pyqtSignal()
+    auction_ended = pyqtSignal()
+    error_message = pyqtSignal()
+    udpate = pyqtSignal()
 
     def __init__(self, client, parent=None):
         super().__init__(parent=parent)
@@ -26,15 +31,40 @@ class ClientWorkerThread(QThread):
 
         for message in messages:
             print(f'WATEK: {message}')
-            if message['type'] in ['info', 'bet']:
-                status = (message['name'], message['current_price'], message['leader'])
-                self.udpate.emit(status)
-                if message['started'] is True:
-                    init = int(message['end_time'])
-                    self.auction_started.emit(init)
+            self.handle_message(message)
+
+    def handle_message(self, message):
+        '''
+        Sprawdź co trzeba i rzuć odpowiednie sygnały
+        '''
+        if message == 'auction_started':
+            self.auction_started.emit()
+
+        if message == 'auction_updated':
+            self.udpate.emit()
+
+        if message == 'error_message':
+            self.error_message.emit()
+
+        if message == 'auction_not_started_yet':
+            self.auction_info.emit()
+
+        if message == 'auction_ended':
+            self.auction_ended.emit()
 
     def stop(self):
         self.terminate()
+
+
+class InfoWindow(QMainWindow):
+    '''
+    Okno informacji
+    '''
+
+    def __init__(self):
+        super().__init__()
+        uic.loadUi('info.ui', self)
+        self.show()
 
 
 class LoginWindow(QMainWindow):
@@ -77,18 +107,22 @@ class GUI():
         self.main_scene = QStackedWidget()
         self.login_window = LoginWindow()
         self.main_window = MainWindow()
+        self.info_window = InfoWindow()
         self.client = Client()
 
         # podpięcie sygnałów
         self.login_window.login_button.clicked.connect(self.login)
+        self.info_window.login_button.clicked.connect(self.logout)
         self.main_window.logout_button.clicked.connect(self.logout)
-        self.main_window.increase10_button.clicked.connect(partial(self.bet, 10))
+        self.main_window.increase10_button.clicked.connect(
+            partial(self.bet, 10))
 
         # główna scena, to QStackedWidget - coś ala zbiór widżetów. Aby się pomiędzy nimi przełączać,
         # najpierw trzeba je dodać.
 
         self.main_scene.addWidget(self.login_window)
         self.main_scene.addWidget(self.main_window)
+        self.main_scene.addWidget(self.info_window)
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.auction_timer)
@@ -121,12 +155,16 @@ class GUI():
                 self.worker.start()
                 self.worker.udpate.connect(self.update_gui)
                 self.worker.auction_started.connect(self.start_auction)
+                self.worker.auction_info.connect(self.auction_not_started)
+                self.worker.auction_ended.connect(self.auction_ended)
+                self.worker.error_message.connect(self.info_message)
                 self.logged = True
 
                 self.main_scene.setCurrentIndex(
-                    self.main_scene.currentIndex()+1)
+                    1)
                 self.main_scene.setFixedSize(
                     self.main_window.minimumWidth(), self.main_window.minimumHeight())
+                self.client.get_info()
 
             except socket.error:
                 QMessageBox.critical(self.main_scene, "LOGOWANIE",
@@ -145,7 +183,7 @@ class GUI():
             self.worker.stop()
             self.client.logout()
             self.logged = False
-            self.main_scene.setCurrentIndex(self.main_scene.currentIndex()-1)
+            self.main_scene.setCurrentIndex(0)
             self.main_scene.setFixedSize(
                 self.login_window.minimumWidth(), self.login_window.minimumHeight())
             self.main_window.current_auction_item_label.setText('Przedmiot: ')
@@ -154,16 +192,12 @@ class GUI():
     def bet(self, price):
         if self.logged:
             self.client.bet(price)
-            # m = QTraderMessage(
-            #     "info", {"username": self.client.username, "token": self.client.token})
-            # self.client.ssl_socket.sendall(m.format_to_send())
 
-    def update_gui(self, val):
-        item, price, leader = val
-        label = self.main_window.current_auction_item_label.text()
-        self.main_window.current_auction_item_label.setText(label+item)
-        self.main_window.auction_time_label_4.setText(str(price))
-        self.main_window.auction_time_label_5.setText(leader)
+    def update_gui(self):
+        self.main_window.auction_time_label_4.setText(
+            str(self.client.actual_price))
+        self.main_window.auction_time_label_5.setText(
+            self.client.current_leader)
 
     def auction_timer(self):
         # checking if flag is true
@@ -187,9 +221,37 @@ class GUI():
             # showing text
             self.main_window.auction_time_label_3.setText(text)
 
-    def start_auction(self, val):
+    def start_auction(self):
         print("AKCJA ROZPOCZELA SIE!")
+        self.main_window.current_auction_item_label.setText(f'PRZEDMIOT: {self.client.item_name}')
+        self.main_window.current_auction_item_start_price_label.setText(f'CENA WYWOŁAWCZA: {self.client.actual_price}')
+        if self.main_scene.currentIndex() == 2:
+            self.main_scene.setCurrentIndex(1)
+            self.main_scene.setFixedSize(
+                self.main_window.minimumWidth(), self.main_window.minimumHeight())
+
+        self.update_gui()
         self.timer.start(100)
+
+    def info_message(self):
+        self.main_scene.setCurrentIndex(2)
+        self.main_scene.setFixedSize(
+            self.info_window.minimumWidth(), self.info_window.minimumHeight())
+        self.info_window.hello_label_2.setText('AKTUALNIE BRAK DOSTĘPNYCH LICYTACJI')
+
+    def auction_not_started(self):
+        self.main_scene.setCurrentIndex(2)
+        self.main_scene.setFixedSize(
+            self.info_window.minimumWidth(), self.info_window.minimumHeight())
+        self.info_window.hello_label_2.setText(
+            f'PRZEDMIOT: {self.client.item_name} \r\n DATA: {self.client.date_auction_start_time}')
+
+    def auction_ended(self):
+        QMessageBox.information(
+            self.main_scene, 'KONIEC', f'PRZEDMIOT: {self.client.item_name} \r\n CENA: {self.client.actual_price} \r\n ZWYCIĘZCA: {self.client.current_leader}')
+        self.timer.stop()
+        self.client.get_info()
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
