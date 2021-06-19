@@ -1,9 +1,6 @@
 import socket
-import json
-import time
 import ssl
-from qtrader_message import QTraderMessage
-
+from .qtrader_message import QTraderMessage
 
 class Client:
     '''

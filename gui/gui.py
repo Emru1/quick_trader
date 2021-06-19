@@ -7,9 +7,8 @@ import time
 from threading import Thread
 import socket
 import sys
-sys.path.append('\quick_trader\client')
-from client import Client
-from qtrader_message import QTraderMessage
+from client.client import Client
+from client.qtrader_message import QTraderMessage
 
 class ClientWorkerThread(QThread):
     '''
