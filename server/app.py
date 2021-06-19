@@ -77,7 +77,6 @@ class App:
             # AuctionHandler.countdown_to_auction(start_time)
             if changed:
                 start_time = int(start_time.timestamp())
-                print(f'CURRENT: {current_time}. START: {start_time}')
                 if current_time >= start_time:
                     AuctionHandler.current_auction_started = True
 
@@ -94,7 +93,6 @@ class App:
 
                 if not AuctionHandler.current_end_time:
                     _, msg = AuctionHandler.get_current_auction_info()
-                    print(msg)
                     self.send(None, msg)
                     AuctionHandler.end_of_time()
 
@@ -109,5 +107,4 @@ class App:
             if xtime > prevtime:
                 prevtime = xtime
                 if not xtime % 4:
-                    print('ping')
                     self.send(None, {'type': 'ping'})

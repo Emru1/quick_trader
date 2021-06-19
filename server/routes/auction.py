@@ -1,6 +1,4 @@
-from datetime import datetime
-from database import Auction, Auth
-import time
+from database import Auction
 from .authorization import check_auth
 from peewee import DoesNotExist
 import errors
@@ -9,7 +7,8 @@ import errors
 class AuctionHandler:
     """
     Klasa służąca do obsłygi aukcji po stronie serwera
-    current_auction - zmienna w klasie, taka sama dla każdej instancji. Możliwość odwołania bez instancji
+    current_auction - zmienna w klasie, taka sama dla każdej instancji.
+    Możliwość odwołania bez instancji
     """
 
     current_auction = None
@@ -23,7 +22,8 @@ class AuctionHandler:
     @classmethod
     def get_newest_auction(cls):
         '''
-        Pobiera najnowszy (pojedynczy) rekord z bazy albo None (kiedy już wszystko obsluzone) i aktualizuje zmienną klasową,
+        Pobiera najnowszy (pojedynczy) rekord z bazy albo None (kiedy już
+        wszystko obsluzone) i aktualizuje zmienną klasową,
         :return: Auction or None
         '''
         if not AuctionHandler.current_auction:
@@ -33,7 +33,7 @@ class AuctionHandler:
                     order_by(Auction.start_time.asc()).dicts().get()
                 AuctionHandler.current_price = float(
                     AuctionHandler.current_auction['start_price'])
-            except DoesNotExist as e:
+            except DoesNotExist:
                 AuctionHandler.current_auction = None
 
         return AuctionHandler.current_auction
@@ -43,9 +43,9 @@ class AuctionHandler:
         '''
         Sprawdza status trwającej aukcji i zwraca strukturę wiadomości
         '''
-        print('Info endpoint')
         # 1. sprawdz czy user zalogowany(token)
-        # 2. sprawdz, jak tam licytacja (AuctionHandler.current_auction). Czas, a może już trwa?
+        # 2. sprawdz, jak tam licytacja (AuctionHandler.current_auction).
+        #    Czas, a może już trwa?
         # 3. zwroc co trzeba
 
         if 'token' not in data or not check_auth(data['token']):
@@ -62,8 +62,7 @@ class AuctionHandler:
                 info['type'] = 'info'
                 info['name'] = cls.current_auction['name']
                 info['current_price'] = cls.current_price
-                info['start_time'] = str(
-                    cls.current_auction['start_time'])
+                info['start_time'] = str(cls.current_auction['start_time'])
                 info['started'] = cls.current_auction_started
                 return None, info
 
@@ -81,8 +80,7 @@ class AuctionHandler:
         info['name'] = AuctionHandler.current_auction['name']
         info['current_price'] = AuctionHandler.current_price
         info['leader'] = AuctionHandler.current_leader
-        info['start_time'] = str(
-            AuctionHandler.current_auction['start_time'])
+        info['start_time'] = str(AuctionHandler.current_auction['start_time'])
         info['end_time'] = AuctionHandler.current_end_time
         info['started'] = AuctionHandler.current_auction_started
         return None, info
@@ -93,9 +91,14 @@ class AuctionHandler:
             return
 
         print(f'OBSLUGIWANA: {AuctionHandler.current_auction}')
-        query = Auction.update({Auction.ended: 1, Auction.buyer: AuctionHandler.current_leader,
-                                Auction.start_price: AuctionHandler.current_price}).\
-            where(Auction.id == AuctionHandler.current_auction['id'])
+        query = Auction.update({
+            Auction.ended:
+            1,
+            Auction.buyer:
+            AuctionHandler.current_leader,
+            Auction.start_price:
+            AuctionHandler.current_price
+        }).where(Auction.id == AuctionHandler.current_auction['id'])
         query.execute()
 
         cls.current_auction = None
@@ -113,8 +116,9 @@ class AuctionHandler:
         :param: new_price - cena zaproponowana przez użytkownika
         '''
         logged = check_auth(data['token'])
-        auction_conditions = (
-            cls.current_auction and cls.current_auction_started and cls.current_end_time)
+        auction_conditions = (cls.current_auction
+                              and cls.current_auction_started
+                              and cls.current_end_time)
         user_conditions = (logged and cls.current_leader != data['username'])
 
         if auction_conditions and user_conditions:
