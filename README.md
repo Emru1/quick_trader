@@ -23,3 +23,11 @@ Uruchomienie:
 1. `cd server`
 2. `source venv/bin/activate`
 3. `python3.9 main.py`
+
+
+
+
+Autorzy:
+Emil Tomczyk
+Marcin Szyszka
+Łukasz Bochniak
