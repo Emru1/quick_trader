@@ -24,7 +24,6 @@ def main():
 
     network_thread = threading.Thread(target=server.run)
     app_thread = threading.Thread(target=app.run)
-    #    app_thread
     network_thread.start()
     app_thread.start()
 

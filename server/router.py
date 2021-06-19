@@ -18,7 +18,6 @@ class Router:
         }
 
     def route(self, data):
-        print(data)
         if data['type'] not in self.routes:
             return errors.ERROR_TYPE_NON_EXIST, {}
         error, ret = self.routes[data['type']](data)

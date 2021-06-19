@@ -26,6 +26,9 @@ Uruchomienie:
 
 
 
+Bardziej szczegółowe instrukcje są w dokumencie projektowym
+
+
 
 Autorzy:  
 Emil Tomczyk  
