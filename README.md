@@ -28,6 +28,6 @@ Uruchomienie:
 
 
 Autorzy:
-Emil Tomczyk
-Marcin Szyszka
-Łukasz Bochniak
+Emil Tomczyk  
+Marcin Szyszka  
+Łukasz Bochniak  
