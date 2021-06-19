@@ -110,12 +110,7 @@ class GUI():
         self.info_window = InfoWindow()
         self.client = Client()
 
-        # podpięcie sygnałów
-        self.login_window.login_button.clicked.connect(self.login)
-        self.info_window.login_button.clicked.connect(self.logout)
-        self.main_window.logout_button.clicked.connect(self.logout)
-        self.main_window.increase10_button.clicked.connect(
-            partial(self.bet, 10))
+        self.connect_buttons()
 
         # główna scena, to QStackedWidget - coś ala zbiór widżetów. Aby się pomiędzy nimi przełączać,
         # najpierw trzeba je dodać.
@@ -151,13 +146,7 @@ class GUI():
                     return
 
                 self.main_window.username_label.setText(username)
-                self.worker = ClientWorkerThread(self.client)
-                self.worker.start()
-                self.worker.udpate.connect(self.update_gui)
-                self.worker.auction_started.connect(self.start_auction)
-                self.worker.auction_info.connect(self.auction_not_started)
-                self.worker.auction_ended.connect(self.auction_ended)
-                self.worker.error_message.connect(self.info_message)
+                self.connect_signals()
                 self.logged = True
 
                 self.main_scene.setCurrentIndex(
@@ -192,6 +181,26 @@ class GUI():
     def bet(self, price):
         if self.logged:
             self.client.bet(price)
+
+    def connect_buttons(self):
+        # podpięcie sygnałów/przyciskow
+        self.login_window.login_button.clicked.connect(self.login)
+        self.info_window.login_button.clicked.connect(self.logout)
+        self.main_window.logout_button.clicked.connect(self.logout)
+        self.main_window.increase10_button.clicked.connect(partial(self.bet, 10))
+        self.main_window.increase50_button.clicked.connect(partial(self.bet, 50))
+        self.main_window.increase100_button.clicked.connect(partial(self.bet, 100))
+        self.main_window.increase500_button.clicked.connect(partial(self.bet, 500))
+        self.main_window.increase1000_button.clicked.connect(partial(self.bet, 1000))
+
+    def connect_signals(self):
+        self.worker = ClientWorkerThread(self.client)
+        self.worker.start()
+        self.worker.udpate.connect(self.update_gui)
+        self.worker.auction_started.connect(self.start_auction)
+        self.worker.auction_info.connect(self.auction_not_started)
+        self.worker.auction_ended.connect(self.auction_ended)
+        self.worker.error_message.connect(self.info_message)
 
     def update_gui(self):
         self.main_window.auction_time_label_4.setText(
