@@ -1,14 +1,12 @@
-
 from PyQt5.QtCore import QThread, QTimer, pyqtSignal
 from functools import partial
 from PyQt5.QtWidgets import QMainWindow, QApplication, QStackedWidget, QMessageBox
 from PyQt5 import uic
-import time
-from threading import Thread
 import socket
 import sys
 from client.client import Client
 from client.qtrader_message import QTraderMessage
+
 
 class ClientWorkerThread(QThread):
     '''
@@ -25,30 +23,29 @@ class ClientWorkerThread(QThread):
         self.client = client
 
     def run(self):
-        print('HALO HALO')
         messages = self.client.listen()
 
         for message in messages:
-            print(f'WATEK: {message}')
             self.handle_message(message)
 
     def handle_message(self, message):
         '''
         Sprawdź co trzeba i rzuć odpowiednie sygnały
         '''
+
         if message == 'auction_started':
             self.auction_started.emit()
 
-        if message == 'auction_updated':
+        elif message == 'auction_updated':
             self.udpate.emit()
 
-        if message == 'error_message':
+        elif message == 'error_message':
             self.error_message.emit()
 
-        if message == 'auction_not_started_yet':
+        elif message == 'auction_not_started_yet':
             self.auction_info.emit()
 
-        if message == 'auction_ended':
+        elif message == 'auction_ended':
             self.auction_ended.emit()
 
     def stop(self):
@@ -186,11 +183,16 @@ class GUI():
         self.login_window.login_button.clicked.connect(self.login)
         self.info_window.login_button.clicked.connect(self.logout)
         self.main_window.logout_button.clicked.connect(self.logout)
-        self.main_window.increase10_button.clicked.connect(partial(self.bet, 10))
-        self.main_window.increase50_button.clicked.connect(partial(self.bet, 50))
-        self.main_window.increase100_button.clicked.connect(partial(self.bet, 100))
-        self.main_window.increase500_button.clicked.connect(partial(self.bet, 500))
-        self.main_window.increase1000_button.clicked.connect(partial(self.bet, 1000))
+        self.main_window.increase10_button.clicked.connect(
+            partial(self.bet, 10))
+        self.main_window.increase50_button.clicked.connect(
+            partial(self.bet, 50))
+        self.main_window.increase100_button.clicked.connect(
+            partial(self.bet, 100))
+        self.main_window.increase500_button.clicked.connect(
+            partial(self.bet, 500))
+        self.main_window.increase1000_button.clicked.connect(
+            partial(self.bet, 1000))
 
     def connect_signals(self):
         self.worker = ClientWorkerThread(self.client)
@@ -208,31 +210,22 @@ class GUI():
             self.client.current_leader)
 
     def auction_timer(self):
-        # checking if flag is true
         if self.client.auction_started:
-            # incrementing the counter
             self.client.count -= 1
 
-            # timer is completed
             if self.client.count == 0:
-
-                # making flag false
                 self.client.auction_started = False
-
-                # setting text to the label
                 self.main_window.auction_time_label_3.setText("0s")
 
         if self.client.auction_started:
-            # getting text from count
             text = str(self.client.count / 10) + " s"
-
-            # showing text
             self.main_window.auction_time_label_3.setText(text)
 
     def start_auction(self):
-        print("AKCJA ROZPOCZELA SIE!")
-        self.main_window.current_auction_item_label.setText(f'PRZEDMIOT: {self.client.item_name}')
-        self.main_window.current_auction_item_start_price_label.setText(f'CENA WYWOŁAWCZA: {self.client.actual_price}')
+        self.main_window.current_auction_item_label.setText(
+            f'PRZEDMIOT: {self.client.item_name}')
+        self.main_window.current_auction_item_start_price_label.setText(
+            f'CENA WYWOŁAWCZA: {self.client.actual_price}')
         if self.main_scene.currentIndex() == 2:
             self.main_scene.setCurrentIndex(1)
             self.main_scene.setFixedSize(
@@ -245,7 +238,8 @@ class GUI():
         self.main_scene.setCurrentIndex(2)
         self.main_scene.setFixedSize(
             self.info_window.minimumWidth(), self.info_window.minimumHeight())
-        self.info_window.hello_label_2.setText('AKTUALNIE BRAK DOSTĘPNYCH LICYTACJI')
+        self.info_window.hello_label_2.setText(
+            'AKTUALNIE BRAK DOSTĘPNYCH LICYTACJI')
 
     def auction_not_started(self):
         self.main_scene.setCurrentIndex(2)
