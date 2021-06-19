@@ -17,10 +17,12 @@ class Client:
         self.token = None
         self.ssl_socket = None
 
+        self.item_name = None
         self.actual_price = None
         self.current_leader = None
         self.count = None
         self.auction_started = None
+        self.date_auction_start_time = None
 
     def login(self, username, password):
         '''
@@ -34,7 +36,7 @@ class Client:
             # context = ssl.create_default_context(
             # ssl.Purpose.CLIENT_AUTH, cafile='tls.cert')
             # context.load_cert_chain(certfile='tls.cert', keyfile='tls.key')
-            s = socket.create_connection(("localhost", 5556))
+            s = socket.create_connection(("localhost", 5555))
             self.ssl_socket = ssl.wrap_socket(s)
             print(self.ssl_socket.version())
         except socket.error as e:
@@ -77,12 +79,16 @@ class Client:
             self.username = None
             self.password = None
 
+            self.actual_price = None
+            self.auction_started = None
+            self.current_leader = None
+            self.count = None
+
         else:
             print('You are not logged in!')
             return
 
     def bet(self, how_much_to_add):
-        print(f'NOWA:{how_much_to_add}')
         if self.token and self.actual_price:
             bet_temp = self.actual_price + how_much_to_add
             self.ssl_socket.sendall(QTraderMessage(
@@ -98,22 +104,60 @@ class Client:
                     received_message = QTraderMessage.receive_message(
                         self.ssl_socket)
                     if received_message:
-                        self.message_handler(received_message)
-                        yield received_message
+                        gui_status = self.message_handler(received_message)
+                        if gui_status in ['auction_started', 'auction_updated', 'error_message', 'auction_not_started_yet', 'auction_ended']:
+                            yield gui_status
                 except ConnectionError:
                     print('Connection problem')
 
     def message_handler(self, message):
-        if message['type'] == 'info' and message['started'] is True:
-            self.count = message['end_time'] * 10
-            self.actual_price = message['current_price']
-            self.current_leader = message['leader']
-            self.auction_started = True
+        '''
+        Sprawdza, co potrzeba i zwraca komunikat do GUI, żeby np. zaktualizować dane
 
-        if message['type'] == 'bet':
+        '''
+        message_type = message['type']
+        if message_type == 'info':
+            if message['started'] is True:
+                if message['end_time'] == 0:
+                    # KONIEC LICYTACJI -> WYSWIETL OKIENKO
+                    self.actual_price = message['current_price']
+                    self.current_leader = message['leader']
+                    self.auction_started = False
+                    self.date_auction_start_time = None
+                    return 'auction_ended'
+                
+                # LICYTACJA ROZPOCZĘtA USTAW POCZĄTKOWE WARTOŚCI
+                self.item_name = message['name']
+                self.count = message['end_time'] * 10
+                self.actual_price = message['current_price']
+                self.current_leader = message['leader']
+                self.auction_started = True
+                return 'auction_started'
+
+            if message['started'] is False:
+                # LICYTACJA JESZCZE NIE ROZPOCZĘTA ->  WYŚWIETL OKNO Z KOMUNIKATEM
+                self.item_name = message['name']
+                self.actual_price = message['current_price']
+                self.auction_started = True
+                self.date_auction_start_time = message['start_time']
+                return 'auction_not_started_yet'
+
+        elif message_type == 'bet':
+            # LICYTACJA PRZEBITA - ZAKTUALIZUJ
             self.count = message['end_time'] * 10
             self.actual_price = message['current_price']
             self.current_leader = message['leader']
+            return 'auction_updated'
+
+        elif message_type == 'error' and message['error'] == 7:
+            # NI MA LICYTACJI NA SERWERZE -> WYŚWIETl OKNO Z KOMUNIKATEM
+            return 'error_message'
+
+
+    def get_info(self):
+        if self.token:
+            self.ssl_socket.sendall(QTraderMessage(
+                'info', {'username': self.username, 'token': self.token}).format_to_send())
 
 
 if __name__ == "__main__":

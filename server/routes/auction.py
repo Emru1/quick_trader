@@ -20,21 +20,6 @@ class AuctionHandler:
     previous_time = 0
     info_sended = False
 
-    def load_auction(self):
-        self.current_auction = Auction.select().\
-            where(not Auction.ended).\
-            order_by(Auction.start_time.asc())
-        if not self.current_auction:
-            return errors.ERROR_NO_AUCTION, {}
-        self.actual_price = self.current_auction.start_price
-        self.seller = self.current_auction.seller
-        self.end_time = self.current_auction.end_time
-        self.item_name = self.current_auction.name
-        return None, {"Actual_price": self.actual_price,
-                      "Seller": self.seller,
-                      "End_time": self.end_time,
-                      "Item_name": self.item_name}
-
     @classmethod
     def get_newest_auction(cls):
         '''
@@ -54,10 +39,6 @@ class AuctionHandler:
         return AuctionHandler.current_auction
 
     @classmethod
-    def update_newest_auction(cls, name):
-        AuctionHandler.current_auction['name'] = name
-
-    @classmethod
     def get_auction_status(cls, data):
         '''
         Sprawdza status trwającej aukcji i zwraca strukturę wiadomości
@@ -71,34 +52,40 @@ class AuctionHandler:
             print('niezalogowany uzyszkodnik')
 
         else:
-            if AuctionHandler.current_auction:
+            if not cls.current_auction and not cls.current_auction_started:
+                # BRAK LICYTACJI W BAZIE
+                return errors.ERROR_NO_AUCTION, {}
+
+            elif cls.current_auction and not cls.current_auction_started:
+                # wyslij info, kiedy odbiedzie sie najblizsza licytacja
                 info = {}
                 info['type'] = 'info'
-                info['name'] = AuctionHandler.current_auction['name']
-                info['current_price'] = AuctionHandler.current_price
-                info['leader'] = AuctionHandler.current_leader
+                info['name'] = cls.current_auction['name']
+                info['current_price'] = cls.current_price
                 info['start_time'] = str(
-                    AuctionHandler.current_auction['start_time'])
-                info['end_time'] = AuctionHandler.current_end_time
-                info['started'] = AuctionHandler.current_auction_started
+                    cls.current_auction['start_time'])
+                info['started'] = cls.current_auction_started
                 return None, info
+
             else:
-                return errors.ERROR_LOGIN_FAILED, {}
+                # LICYTACJA TRWA -> WYŚLIJ JEJ STATUS
+                return cls.get_current_auction_info()
 
-    def bet(self, data):
-
-        if not data["token"]:
-            return errors.ERROR_AUTH_FAILED, {}
-        bet_price = data["price"]
-        username = Auth.get(Auth.login_token == data["token"]).name
-        if bet_price < self.actual_price:
-            return None
-        self.actual_price = bet_price
-        self.buyer = username
-        self.end_time += 10
-        return None, {"Actual_price": self.actual_price,
-                      "Buyer": self.buyer,
-                      "End_time": self.end_time}
+    @classmethod
+    def get_current_auction_info(cls):
+        '''
+        PRZYGOTOWUJE WIADOMOSC O AKTUALNEJ LICYTACJI
+        '''
+        info = {}
+        info['type'] = 'info'
+        info['name'] = AuctionHandler.current_auction['name']
+        info['current_price'] = AuctionHandler.current_price
+        info['leader'] = AuctionHandler.current_leader
+        info['start_time'] = str(
+            AuctionHandler.current_auction['start_time'])
+        info['end_time'] = AuctionHandler.current_end_time
+        info['started'] = AuctionHandler.current_auction_started
+        return None, info
 
     @classmethod
     def end_of_time(cls):
@@ -111,15 +98,12 @@ class AuctionHandler:
             where(Auction.id == AuctionHandler.current_auction['id'])
         query.execute()
 
-        AuctionHandler.current_auction = None
-        AuctionHandler.current_auction_started = False
-        AuctionHandler.current_leader = None  # id
-        AuctionHandler.current_price = None
-        AuctionHandler.current_end_time = 60
-        AuctionHandler.previous_time = 0
-
-        # return None, {"Actual_price": self.actual_price,
-        #               "Buyer": self.buyer}
+        cls.current_auction = None
+        cls.current_auction_started = False
+        cls.current_leader = None  # id
+        cls.current_price = None
+        cls.current_end_time = 60
+        cls.previous_time = 0
 
     @classmethod
     def bet(cls, data):
@@ -132,16 +116,6 @@ class AuctionHandler:
         auction_conditions = (
             cls.current_auction and cls.current_auction_started and cls.current_end_time)
         user_conditions = (logged and cls.current_leader != data['username'])
-        
-        # possible = all(logged, cls.current_auction, cls.current_leader != data['username'],
-        #                cls.current_auction_started, cls.current_end_time)
-
-        print('logged:', logged)
-        print('aukcja:', cls.current_auction)
-   
-        print('leader:', cls.current_leader)
-        print('wystartowana:', cls.current_auction_started)
-        print('czas:', cls.current_end_time)
 
         if auction_conditions and user_conditions:
             if data['price'] > cls.current_price:
