@@ -1,5 +1,6 @@
 import socket
 import ssl
+import datetime
 from .qtrader_message import QTraderMessage
 
 class Client:

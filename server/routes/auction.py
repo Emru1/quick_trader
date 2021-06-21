@@ -15,7 +15,7 @@ class AuctionHandler:
     current_auction_started = False
     current_leader = None  # id
     current_price = None
-    current_end_time = 60
+    current_end_time = 20
     previous_time = 0
     info_sended = False
 
@@ -43,10 +43,6 @@ class AuctionHandler:
         '''
         Sprawdza status trwającej aukcji i zwraca strukturę wiadomości
         '''
-        # 1. sprawdz czy user zalogowany(token)
-        # 2. sprawdz, jak tam licytacja (AuctionHandler.current_auction).
-        #    Czas, a może już trwa?
-        # 3. zwroc co trzeba
 
         if 'token' not in data or not check_auth(data['token']):
             print('niezalogowany uzyszkodnik')
@@ -105,8 +101,9 @@ class AuctionHandler:
         cls.current_auction_started = False
         cls.current_leader = None  # id
         cls.current_price = None
-        cls.current_end_time = 60
+        cls.current_end_time = 20
         cls.previous_time = 0
+        cls.info_sended = False
 
     @classmethod
     def bet(cls, data):
@@ -126,7 +123,7 @@ class AuctionHandler:
 
                 cls.current_price = data['price']
                 cls.current_leader = data['username']
-                cls.current_end_time += 10
+                cls.current_end_time += 5
 
                 info = {}
                 info['name'] = cls.current_auction['name']

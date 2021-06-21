@@ -115,7 +115,7 @@ class GUI():
         self.main_scene.addWidget(self.main_window)
         self.main_scene.addWidget(self.info_window)
 
-        self.timer = QTimer()
+        self.timer = QTimer(self.main_window)
         self.timer.timeout.connect(self.auction_timer)
 
         self.logged = False
@@ -134,9 +134,9 @@ class GUI():
 
         if username and password:
             try:
-                succes, error = self.client.login(username, password)
+                success, error = self.client.login(username, password)
 
-                if not succes:
+                if not success:
                     QMessageBox.critical(self.main_scene, "LOGOWANIE",
                                          f"Podano niepoprawne dane: {error}")
                     return
@@ -210,29 +210,30 @@ class GUI():
             self.client.current_leader)
 
     def auction_timer(self):
+        self.client.count -= 1
         if self.client.auction_started:
-            self.client.count -= 1
 
             if self.client.count == 0:
                 self.client.auction_started = False
                 self.main_window.auction_time_label_3.setText("0s")
+                self.timer.stop()
 
-        if self.client.auction_started:
             text = str(self.client.count / 10) + " s"
             self.main_window.auction_time_label_3.setText(text)
 
     def start_auction(self):
+        self.timer.start(100)
+        self.update_gui()
+
         self.main_window.current_auction_item_label.setText(
             f'PRZEDMIOT: {self.client.item_name}')
         self.main_window.current_auction_item_start_price_label.setText(
             f'CENA WYWOŁAWCZA: {self.client.actual_price}')
-        if self.main_scene.currentIndex() == 2:
-            self.main_scene.setCurrentIndex(1)
-            self.main_scene.setFixedSize(
-                self.main_window.minimumWidth(), self.main_window.minimumHeight())
+        # if self.main_scene.currentIndex() == 2:
+        self.main_scene.setCurrentIndex(1)
+        self.main_scene.setFixedSize(
+            self.main_window.minimumWidth(), self.main_window.minimumHeight())
 
-        self.update_gui()
-        self.timer.start(100)
 
     def info_message(self):
         self.main_scene.setCurrentIndex(2)

@@ -76,8 +76,8 @@ class App:
 
             # AuctionHandler.countdown_to_auction(start_time)
             if changed:
-                start_time = int(start_time.timestamp())
-                if current_time >= start_time:
+                s_time = int(start_time.timestamp())
+                if current_time >= s_time:
                     AuctionHandler.current_auction_started = True
 
             if AuctionHandler.current_auction_started:
@@ -87,9 +87,6 @@ class App:
                     AuctionHandler.info_sended = True
                 if changed:
                     AuctionHandler.current_end_time -= 1
-
-                # AuctionHandler.current_price = 5000
-                # AuctionHandler.current_leader = 2
 
                 if not AuctionHandler.current_end_time:
                     _, msg = AuctionHandler.get_current_auction_info()
